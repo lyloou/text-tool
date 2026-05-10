@@ -87,8 +87,7 @@
   justify-content: flex-end;
 }
 
-.header-metrics span,
-.status-bar span,
+.status-bar-group span,
 .match-count {
   border: 1px solid var(--line);
   background: var(--panel-soft);
@@ -196,7 +195,8 @@ h3 {
 .source-action-row,
 .result-actions,
 .input-actions,
-.status-bar {
+.status-bar,
+.status-bar-group {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -615,7 +615,7 @@ mark {
 }
 
 .status-bar {
-  justify-content: flex-end;
+  justify-content: space-between;
   min-height: 28px;
 }
 

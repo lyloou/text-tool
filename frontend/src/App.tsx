@@ -362,13 +362,6 @@ function App() {
               English
             </button>
           </div>
-          <span>{t.status[status]}</span>
-          <span>
-            {lineCount} {t.lines}
-          </span>
-          <span>
-            {sourceMatches.length} {t.matches}
-          </span>
         </div>
       </header>
 
@@ -424,9 +417,20 @@ function App() {
       </section>
 
       <footer className="status-bar">
-        <span>{t.footerReady}</span>
-        <span>{t.footerEncoding}</span>
-        <span>{t.footerLocal}</span>
+        <div className="status-bar-group">
+          <span>{t.status[status]}</span>
+          <span>
+            {lineCount} {t.lines}
+          </span>
+          <span>
+            {sourceMatches.length} {t.matches}
+          </span>
+        </div>
+        <div className="status-bar-group">
+          <span>{t.footerReady}</span>
+          <span>{t.footerEncoding}</span>
+          <span>{t.footerLocal}</span>
+        </div>
       </footer>
 
       {toastMessage ? (
