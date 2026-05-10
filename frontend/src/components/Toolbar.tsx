@@ -2,6 +2,23 @@ type ToolbarProps = {
   replaceQuery: string
   replaceWith: string
   matchCount: number
+  text: {
+    eyebrow: string
+    title: string
+    matchCount: (count: number) => string
+    replaceEyebrow: string
+    replaceTitle: string
+    find: string
+    replaceWith: string
+    matchHint: (query: string, count: number) => string
+    applyReplace: string
+    lineToolsEyebrow: string
+    lineToolsTitle: string
+    reverseLines: string
+    deduplicateLines: string
+    sortLines: string
+    commaToLines: string
+  }
   onReplaceQueryChange: (value: string) => void
   onReplaceWithChange: (value: string) => void
   onReplace: () => void
@@ -15,6 +32,7 @@ function Toolbar({
   replaceQuery,
   replaceWith,
   matchCount,
+  text,
   onReplaceQueryChange,
   onReplaceWithChange,
   onReplace,
@@ -27,53 +45,53 @@ function Toolbar({
     <section className="toolbar-panel source-toolbar">
       <div className="toolbar-row">
         <div>
-          <p className="eyebrow">Source Text Operations</p>
-          <h2>原始内容工作台</h2>
+          <p className="eyebrow">{text.eyebrow}</p>
+          <h2>{text.title}</h2>
         </div>
-        <p className="match-count">命中 {matchCount} 项</p>
+        <p className="match-count">{text.matchCount(matchCount)}</p>
       </div>
 
       <div className="tool-grid source-tool-grid">
         <div className="tool-block replace-tool">
           <div className="mini-tool-header">
-            <p className="eyebrow">Replace</p>
-            <h3>查找替换</h3>
+            <p className="eyebrow">{text.replaceEyebrow}</p>
+            <h3>{text.replaceTitle}</h3>
           </div>
           <div className="field-row two-columns">
             <label>
-              <span>查找</span>
+              <span>{text.find}</span>
               <input value={replaceQuery} onChange={(event) => onReplaceQueryChange(event.target.value)} />
-              <span className="match-hint">{replaceQuery ? `匹配 ${matchCount} 项` : '未输入查找内容'}</span>
+              <span className="match-hint">{text.matchHint(replaceQuery, matchCount)}</span>
             </label>
             <label>
-              <span>替换为</span>
+              <span>{text.replaceWith}</span>
               <input value={replaceWith} onChange={(event) => onReplaceWithChange(event.target.value)} />
             </label>
           </div>
           <div className="source-action-row">
             <button className="primary-button" type="button" onClick={onReplace}>
-              应用替换到原始内容
+              {text.applyReplace}
             </button>
           </div>
         </div>
 
         <div className="tool-block quick-actions">
           <div className="mini-tool-header">
-            <p className="eyebrow">Line Tools</p>
-            <h3>行处理</h3>
+            <p className="eyebrow">{text.lineToolsEyebrow}</p>
+            <h3>{text.lineToolsTitle}</h3>
           </div>
           <div className="source-action-row compact-actions">
             <button className="secondary-button" type="button" onClick={onReverseLines}>
-              按行逆序
+              {text.reverseLines}
             </button>
             <button className="secondary-button" type="button" onClick={onDeduplicateLines}>
-              按行去重
+              {text.deduplicateLines}
             </button>
             <button className="secondary-button" type="button" onClick={onSortLines}>
-              升序排序
+              {text.sortLines}
             </button>
             <button className="secondary-button" type="button" onClick={onCommaValuesToLines}>
-              逗号转行
+              {text.commaToLines}
             </button>
           </div>
         </div>

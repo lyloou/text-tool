@@ -3,14 +3,26 @@ import type { ResultOutput } from '../services/tauriApi'
 type ResultViewProps = {
   ignoreEmptyLines: boolean
   outputs: ResultOutput[]
+  text: {
+    eyebrow: string
+    title: string
+    ignoreEmptyLines: string
+    convert: string
+    formatEyebrow: string
+    copy: string
+    empty: string
+  }
+  formatLabels: Record<ResultOutput['format'], string>
   onIgnoreEmptyLinesChange: (value: boolean) => void
   onConvert: () => void
-  onCopy: (output: string, label: string) => void
+  onCopy: (output: string) => void
 }
 
 function ResultView({
   ignoreEmptyLines,
   outputs,
+  text,
+  formatLabels,
   onIgnoreEmptyLinesChange,
   onConvert,
   onCopy,
@@ -19,8 +31,8 @@ function ResultView({
     <section className="result-panel workbench-panel">
       <div className="panel-header result-header">
         <div>
-          <p className="eyebrow">Result Workbench</p>
-          <h2>转换结果</h2>
+          <p className="eyebrow">{text.eyebrow}</p>
+          <h2>{text.title}</h2>
         </div>
         <div className="result-actions">
           <label className="toggle">
@@ -29,10 +41,10 @@ function ResultView({
               checked={ignoreEmptyLines}
               onChange={(event) => onIgnoreEmptyLinesChange(event.target.checked)}
             />
-            <span>忽略空行</span>
+            <span>{text.ignoreEmptyLines}</span>
           </label>
           <button className="primary-button" type="button" onClick={onConvert}>
-            转换
+            {text.convert}
           </button>
         </div>
       </div>
@@ -42,11 +54,11 @@ function ResultView({
           <article key={item.format} className="result-card">
             <div className="result-card-header">
               <div>
-                <p className="eyebrow">Output Format</p>
-                <h3>{item.label}</h3>
+                <p className="eyebrow">{text.formatEyebrow}</p>
+                <h3>{formatLabels[item.format]}</h3>
               </div>
-              <button className="secondary-button" type="button" onClick={() => onCopy(item.output, item.label)}>
-                复制
+              <button className="secondary-button" type="button" onClick={() => onCopy(item.output)}>
+                {text.copy}
               </button>
             </div>
             <div className="result-surface">
@@ -55,7 +67,7 @@ function ResultView({
                   {item.output}
                 </p>
               ) : (
-                <p className="empty-state">转换结果会显示在这里。</p>
+                <p className="empty-state">{text.empty}</p>
               )}
             </div>
           </article>

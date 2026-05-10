@@ -52,6 +52,32 @@
   line-height: 1;
 }
 
+.language-switch {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid #bdc7cc;
+  border-radius: 999px;
+  background: #f8faf9;
+}
+
+.language-switch button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #46505b;
+  padding: 5px 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.language-switch button.active {
+  background: #12766e;
+  color: #ffffff;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   font-size: 11px;

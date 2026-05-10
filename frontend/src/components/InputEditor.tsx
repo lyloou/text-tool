@@ -5,12 +5,19 @@ type InputEditorProps = {
   value: string
   searchQuery: string
   matches: SearchMatch[]
+  text: {
+    eyebrow: string
+    title: string
+    paste: string
+    clear: string
+    placeholder: string
+  }
   onChange: (value: string) => void
   onClearSource: () => void
   onPasteSource: () => void
 }
 
-function InputEditor({ value, searchQuery, matches, onChange, onClearSource, onPasteSource }: InputEditorProps) {
+function InputEditor({ value, searchQuery, matches, text, onChange, onClearSource, onPasteSource }: InputEditorProps) {
   const highlightRef = useRef<HTMLDivElement>(null)
 
   function handleScroll(event: React.UIEvent<HTMLTextAreaElement>) {
@@ -26,15 +33,15 @@ function InputEditor({ value, searchQuery, matches, onChange, onClearSource, onP
     <section className="panel editor-panel">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Input</p>
-          <h2>原始内容</h2>
+          <p className="eyebrow">{text.eyebrow}</p>
+          <h2>{text.title}</h2>
         </div>
         <div className="input-actions">
           <button className="secondary-button" type="button" onClick={onPasteSource}>
-            粘贴
+            {text.paste}
           </button>
           <button className="secondary-button" type="button" onClick={onClearSource}>
-            清除
+            {text.clear}
           </button>
         </div>
       </div>
@@ -47,7 +54,7 @@ function InputEditor({ value, searchQuery, matches, onChange, onClearSource, onP
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onScroll={handleScroll}
-          placeholder="请输入内容"
+          placeholder={text.placeholder}
           spellCheck={false}
         />
       </div>
