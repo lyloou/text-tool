@@ -3,6 +3,7 @@ mod commands;
 use commands::{
     comma_values_to_lines_command, convert_lines_command, deduplicate_lines_command,
     replace_text_command, search_matches_command, sort_lines_ascending_command,
+    sort_lines_descending_command,
 };
 
 fn main() {
@@ -14,6 +15,7 @@ fn main() {
             search_matches_command,
             deduplicate_lines_command,
             sort_lines_ascending_command,
+            sort_lines_descending_command,
             comma_values_to_lines_command
         ])
         .run(tauri::generate_context!())

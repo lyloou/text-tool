@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use text_core::{
     ConvertMode, SearchMatch, comma_values_to_lines, convert_lines, deduplicate_lines,
-    replace_all, replace_first, search_matches, sort_lines_ascending, FindOptions,
+    replace_all, replace_first, search_matches, sort_lines_ascending, sort_lines_descending,
+    FindOptions,
 };
 
 #[derive(Debug, Deserialize)]
@@ -38,6 +39,13 @@ pub struct SearchMatchesRequest {
 #[serde(rename_all = "camelCase")]
 pub struct LineOperationRequest {
     pub input: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SortLinesRequest {
+    pub input: String,
+    pub numeric_sort: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -104,8 +112,14 @@ pub fn deduplicate_lines_command(request: LineOperationRequest) -> LineOperation
 }
 
 #[tauri::command]
-pub fn sort_lines_ascending_command(request: LineOperationRequest) -> LineOperationResponse {
-    let output = sort_lines_ascending(&request.input);
+pub fn sort_lines_ascending_command(request: SortLinesRequest) -> LineOperationResponse {
+    let output = sort_lines_ascending(&request.input, request.numeric_sort);
+    LineOperationResponse { output }
+}
+
+#[tauri::command]
+pub fn sort_lines_descending_command(request: SortLinesRequest) -> LineOperationResponse {
+    let output = sort_lines_descending(&request.input, request.numeric_sort);
     LineOperationResponse { output }
 }
 

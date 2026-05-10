@@ -3,7 +3,10 @@ mod replace;
 mod search;
 mod transform;
 
-pub use reorder::{comma_values_to_lines, deduplicate_lines, reverse_lines, sort_lines_ascending};
+pub use reorder::{
+    comma_values_to_lines, deduplicate_lines, reverse_lines, sort_lines_ascending,
+    sort_lines_descending,
+};
 pub use replace::{replace_all, replace_first, replace_text};
 pub use search::{FindOptions, SearchMatch, search_matches};
 pub use transform::{ConvertMode, convert_lines};
@@ -13,7 +16,7 @@ mod tests {
     use super::{
         ConvertMode, SearchMatch, comma_values_to_lines, convert_lines, deduplicate_lines,
         FindOptions, replace_all, replace_first, replace_text, reverse_lines, search_matches,
-        sort_lines_ascending,
+        sort_lines_ascending, sort_lines_descending,
     };
 
     #[test]
@@ -60,8 +63,26 @@ mod tests {
 
     #[test]
     fn sorts_lines_in_ascending_order() {
-        let output = sort_lines_ascending("beta\nalpha\nGamma");
+        let output = sort_lines_ascending("beta\nalpha\nGamma", false);
         assert_eq!(output, "Gamma\nalpha\nbeta");
+    }
+
+    #[test]
+    fn sorts_lines_in_descending_order() {
+        let output = sort_lines_descending("beta\nalpha\nGamma", false);
+        assert_eq!(output, "beta\nalpha\nGamma");
+    }
+
+    #[test]
+    fn sorts_lines_by_leading_numbers_in_ascending_order() {
+        let output = sort_lines_ascending("123 item\n38 item\n-4 item\nabc", true);
+        assert_eq!(output, "-4 item\n38 item\n123 item\nabc");
+    }
+
+    #[test]
+    fn sorts_lines_by_leading_numbers_in_descending_order() {
+        let output = sort_lines_descending("123 item\n38 item\n-4 item\nabc", true);
+        assert_eq!(output, "123 item\n38 item\n-4 item\nabc");
     }
 
     #[test]

@@ -84,14 +84,28 @@ export async function deduplicateLines(input: string) {
   })
 }
 
-export async function sortLinesAscending(input: string) {
+export async function sortLinesAscending(input: string, numericSort: boolean) {
   if (!isTauriRuntime) {
-    return { output: input.split('\n').sort().join('\n') }
+    return { output: sortLinesLocal(input, numericSort, false) }
   }
 
   return invoke<{ output: string }>('sort_lines_ascending_command', {
     request: {
       input,
+      numericSort,
+    },
+  })
+}
+
+export async function sortLinesDescending(input: string, numericSort: boolean) {
+  if (!isTauriRuntime) {
+    return { output: sortLinesLocal(input, numericSort, true) }
+  }
+
+  return invoke<{ output: string }>('sort_lines_descending_command', {
+    request: {
+      input,
+      numericSort,
     },
   })
 }
@@ -209,6 +223,41 @@ function deduplicateLinesLocal(input: string) {
       return true
     })
     .join('\n')
+}
+
+function sortLinesLocal(input: string, numericSort: boolean, descending: boolean) {
+  const lines = input.split('\n')
+  return lines.sort((left, right) => compareLines(left, right, numericSort, descending)).join('\n')
+}
+
+function compareLines(left: string, right: string, numericSort: boolean, descending: boolean) {
+  if (!numericSort) {
+    return descending ? right.localeCompare(left) : left.localeCompare(right)
+  }
+
+  const leftNumber = leadingInteger(left)
+  const rightNumber = leadingInteger(right)
+
+  if (leftNumber !== null && rightNumber !== null) {
+    return descending
+      ? rightNumber - leftNumber || right.localeCompare(left)
+      : leftNumber - rightNumber || left.localeCompare(right)
+  }
+
+  if (leftNumber !== null) {
+    return -1
+  }
+
+  if (rightNumber !== null) {
+    return 1
+  }
+
+  return descending ? right.localeCompare(left) : left.localeCompare(right)
+}
+
+function leadingInteger(value: string) {
+  const match = value.match(/^-?\d+/)
+  return match ? Number.parseInt(match[0], 10) : null
 }
 
 function commaValuesToLinesLocal(input: string) {

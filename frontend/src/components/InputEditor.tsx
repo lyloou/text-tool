@@ -12,6 +12,7 @@ type InputEditorProps = {
   findOptions: FindOptions
   findVisible: boolean
   replaceVisible: boolean
+  numericSort: boolean
   text: {
     copy: string
     copyHighlights: string
@@ -21,6 +22,8 @@ type InputEditorProps = {
     reverseLines: string
     deduplicateLines: string
     sortLines: string
+    sortLinesDescending: string
+    numericSort: string
     commaToLines: string
     find: string
     replaceWith: string
@@ -42,6 +45,7 @@ type InputEditorProps = {
   onReplace: () => void
   onReplaceAll: () => void
   onFindEscape: () => void
+  onNumericSortChange: (value: boolean) => void
   onCopySource: () => void
   onCopyHighlights: () => void
   onClearSource: () => void
@@ -51,6 +55,7 @@ type InputEditorProps = {
   onReverseLines: () => void
   onDeduplicateLines: () => void
   onSortLines: () => void
+  onSortLinesDescending: () => void
   onCommaValuesToLines: () => void
 }
 
@@ -65,6 +70,7 @@ function InputEditor({
   findOptions,
   findVisible,
   replaceVisible,
+  numericSort,
   text,
   onChange,
   onSearchQueryChange,
@@ -74,6 +80,7 @@ function InputEditor({
   onReplace,
   onReplaceAll,
   onFindEscape,
+  onNumericSortChange,
   onCopySource,
   onCopyHighlights,
   onClearSource,
@@ -83,6 +90,7 @@ function InputEditor({
   onReverseLines,
   onDeduplicateLines,
   onSortLines,
+  onSortLinesDescending,
   onCommaValuesToLines,
 }: InputEditorProps) {
   const highlightRef = useRef<HTMLDivElement>(null)
@@ -107,18 +115,37 @@ function InputEditor({
     <section className="panel editor-panel">
       <div className="editor-toolbar" aria-label={text.lineTools}>
         <div className="line-action-bar">
-          <button className="line-action-button" type="button" onClick={onReverseLines}>
-            {text.reverseLines}
-          </button>
-          <button className="line-action-button" type="button" onClick={onDeduplicateLines}>
-            {text.deduplicateLines}
-          </button>
-          <button className="line-action-button" type="button" onClick={onSortLines}>
-            {text.sortLines}
-          </button>
-          <button className="line-action-button" type="button" onClick={onCommaValuesToLines}>
-            {text.commaToLines}
-          </button>
+          <div className="sort-action-group">
+            <button className="line-action-button" type="button" onClick={onSortLines}>
+              {text.sortLines}
+            </button>
+            <button className="line-action-button" type="button" onClick={onSortLinesDescending}>
+              {text.sortLinesDescending}
+            </button>
+            <button
+              className={numericSort ? 'sort-option-toggle active' : 'sort-option-toggle'}
+              type="button"
+              aria-pressed={numericSort}
+              aria-label={text.numericSort}
+              onClick={() => onNumericSortChange(!numericSort)}
+            >
+              <span className="toggle-track" aria-hidden="true">
+                <span className="toggle-thumb" />
+              </span>
+              <span>{text.numericSort}</span>
+            </button>
+          </div>
+          <div className="line-transform-group">
+            <button className="line-action-button" type="button" onClick={onReverseLines}>
+              {text.reverseLines}
+            </button>
+            <button className="line-action-button" type="button" onClick={onDeduplicateLines}>
+              {text.deduplicateLines}
+            </button>
+            <button className="line-action-button" type="button" onClick={onCommaValuesToLines}>
+              {text.commaToLines}
+            </button>
+          </div>
         </div>
         <div className="input-actions">
           {showCopyHighlights ? (

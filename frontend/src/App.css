@@ -206,6 +206,14 @@ h3 {
 .line-action-bar {
   display: flex;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sort-action-group,
+.line-transform-group {
+  display: inline-flex;
+  align-items: center;
   gap: 7px;
   flex-wrap: wrap;
 }
@@ -222,6 +230,56 @@ h3 {
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.sort-option-toggle {
+  appearance: none;
+  min-height: 30px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.toggle-track {
+  width: 26px;
+  height: 15px;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line-strong) 45%, transparent);
+}
+
+.toggle-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--button);
+  box-shadow: 0 1px 2px rgba(17, 24, 28, 0.22);
+  transition: transform 120ms ease;
+}
+
+.sort-option-toggle.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.sort-option-toggle.active .toggle-track {
+  background: var(--accent);
+}
+
+.sort-option-toggle.active .toggle-thumb {
+  transform: translateX(11px);
 }
 
 .option-chip {
@@ -314,7 +372,8 @@ input:focus,
 }
 
 .editor-toolbar .secondary-button,
-.editor-toolbar .line-action-button {
+.editor-toolbar .line-action-button,
+.editor-toolbar .sort-option-toggle {
   min-height: 30px;
   padding: 0 10px;
   font-size: 12px;

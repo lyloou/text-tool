@@ -10,6 +10,7 @@ import {
   replaceText,
   searchMatches,
   sortLinesAscending,
+  sortLinesDescending,
   writeClipboardText,
   type FindOptions,
   type ResultOutput,
@@ -110,6 +111,7 @@ function App() {
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [replaceQuery, setReplaceQuery] = useState('')
   const [replaceWith, setReplaceWith] = useState('')
+  const [numericSort, setNumericSort] = useState(false)
   const [findOptions, setFindOptions] = useState<FindOptions>({
     caseSensitive: false,
     wholeWord: false,
@@ -256,7 +258,14 @@ function App() {
   }
 
   async function handleSortLines() {
-    const result = await sortLinesAscending(sourceText)
+    const result = await sortLinesAscending(sourceText, numericSort)
+    setSourceText(result.output)
+    await runConvert(result.output)
+    setStatus('sorted')
+  }
+
+  async function handleSortLinesDescending() {
+    const result = await sortLinesDescending(sourceText, numericSort)
     setSourceText(result.output)
     await runConvert(result.output)
     setStatus('sorted')
@@ -375,6 +384,7 @@ function App() {
             findOptions={findOptions}
             findVisible={findVisible}
             replaceVisible={replaceVisible}
+            numericSort={numericSort}
             text={inputText[language]}
             onChange={setSourceText}
             onSearchQueryChange={setReplaceQuery}
@@ -384,6 +394,7 @@ function App() {
             onReplace={() => void runReplace(false)}
             onReplaceAll={() => void runReplace(true)}
             onFindEscape={handleFindEscape}
+            onNumericSortChange={setNumericSort}
             onCopySource={() => void handleCopySource()}
             onCopyHighlights={() => void handleCopyHighlights()}
             onClearSource={() => void handleClearSource()}
@@ -393,6 +404,7 @@ function App() {
             onReverseLines={() => void handleReverseLines()}
             onDeduplicateLines={() => void handleDeduplicateLines()}
             onSortLines={() => void handleSortLines()}
+            onSortLinesDescending={() => void handleSortLinesDescending()}
             onCommaValuesToLines={() => void handleCommaValuesToLines()}
           />
         </div>
@@ -433,6 +445,8 @@ const inputText = {
     reverseLines: '逆序',
     deduplicateLines: '去重',
     sortLines: '升序',
+    sortLinesDescending: '降序',
+    numericSort: '数字排序',
     commaToLines: '逗号转行',
     find: '查找',
     replaceWith: '替换为',
@@ -455,6 +469,8 @@ const inputText = {
     reverseLines: 'Reverse',
     deduplicateLines: 'Deduplicate',
     sortLines: 'Sort',
+    sortLinesDescending: 'Reverse sort',
+    numericSort: 'Numeric sort',
     commaToLines: 'Comma to lines',
     find: 'Find',
     replaceWith: 'Replace with',
