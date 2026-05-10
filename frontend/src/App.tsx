@@ -17,6 +17,7 @@ import {
 } from './services/tauriApi'
 
 type Language = 'zh' | 'en'
+type Theme = 'light' | 'dark'
 type StatusKey =
   | 'ready'
   | 'converted'
@@ -38,6 +39,9 @@ const messages = {
     lines: '行',
     matches: '匹配',
     language: '语言',
+    theme: '主题',
+    lightTheme: '日间',
+    darkTheme: '夜间',
     footerReady: '已准备处理 UTF-8 文本',
     footerEncoding: 'UTF-8',
     footerLocal: '本地处理',
@@ -68,6 +72,9 @@ const messages = {
     lines: 'lines',
     matches: 'matches',
     language: 'Language',
+    theme: 'Theme',
+    lightTheme: 'Light',
+    darkTheme: 'Dark',
     footerReady: 'Ready for UTF-8 source text',
     footerEncoding: 'UTF-8',
     footerLocal: 'Local processing',
@@ -95,6 +102,7 @@ const messages = {
 
 function App() {
   const [language, setLanguage] = useState<Language>('zh')
+  const [theme, setTheme] = useState<Theme>('light')
   const [sourceText, setSourceText] = useState('')
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [replaceQuery, setReplaceQuery] = useState('')
@@ -215,13 +223,29 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" data-theme={theme}>
       <header className="app-header">
         <div>
           <p className="eyebrow">{t.appEyebrow}</p>
           <h1>{t.appTitle}</h1>
         </div>
         <div className="header-metrics" aria-label={t.statusLabel}>
+          <div className="segmented-control" aria-label={t.theme}>
+            <button
+              className={theme === 'light' ? 'active' : ''}
+              type="button"
+              onClick={() => setTheme('light')}
+            >
+              {t.lightTheme}
+            </button>
+            <button
+              className={theme === 'dark' ? 'active' : ''}
+              type="button"
+              onClick={() => setTheme('dark')}
+            >
+              {t.darkTheme}
+            </button>
+          </div>
           <div className="language-switch" aria-label={t.language}>
             <button
               className={language === 'zh' ? 'active' : ''}
