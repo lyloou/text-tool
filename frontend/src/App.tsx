@@ -187,6 +187,16 @@ function App() {
     setStatus('cleared')
   }
 
+  async function handleCopySource() {
+    if (!sourceText) {
+      return
+    }
+
+    await writeClipboardText(sourceText)
+    setStatus('copied')
+    setToastMessage(t.toastCopied)
+  }
+
   async function handlePasteSource() {
     const text = await readClipboardText()
     setSourceText(text)
@@ -259,6 +269,7 @@ function App() {
             matches={sourceMatches}
             text={inputText[language]}
             onChange={setSourceText}
+            onCopySource={() => void handleCopySource()}
             onClearSource={() => void handleClearSource()}
             onPasteSource={() => void handlePasteSource()}
           />
@@ -331,6 +342,7 @@ const inputText = {
   zh: {
     eyebrow: '输入',
     title: '原始内容',
+    copy: '复制',
     paste: '粘贴',
     clear: '清除',
     placeholder: '请输入内容',
@@ -338,6 +350,7 @@ const inputText = {
   en: {
     eyebrow: 'Input',
     title: 'Source Content',
+    copy: 'Copy',
     paste: 'Paste',
     clear: 'Clear',
     placeholder: 'Enter content',

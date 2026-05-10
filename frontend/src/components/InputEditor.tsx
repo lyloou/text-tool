@@ -8,16 +8,27 @@ type InputEditorProps = {
   text: {
     eyebrow: string
     title: string
+    copy: string
     paste: string
     clear: string
     placeholder: string
   }
   onChange: (value: string) => void
+  onCopySource: () => void
   onClearSource: () => void
   onPasteSource: () => void
 }
 
-function InputEditor({ value, searchQuery, matches, text, onChange, onClearSource, onPasteSource }: InputEditorProps) {
+function InputEditor({
+  value,
+  searchQuery,
+  matches,
+  text,
+  onChange,
+  onCopySource,
+  onClearSource,
+  onPasteSource,
+}: InputEditorProps) {
   const highlightRef = useRef<HTMLDivElement>(null)
 
   function handleScroll(event: React.UIEvent<HTMLTextAreaElement>) {
@@ -37,6 +48,9 @@ function InputEditor({ value, searchQuery, matches, text, onChange, onClearSourc
           <h2>{text.title}</h2>
         </div>
         <div className="input-actions">
+          <button className="secondary-button" type="button" onClick={onCopySource}>
+            {text.copy}
+          </button>
           <button className="secondary-button" type="button" onClick={onPasteSource}>
             {text.paste}
           </button>
