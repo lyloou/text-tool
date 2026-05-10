@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import InputEditor from './components/InputEditor'
 import ResultView from './components/ResultView'
-import Toolbar from './components/Toolbar'
 import {
   convertAllFormats,
   commaValuesToLines,
@@ -35,7 +34,6 @@ type StatusKey =
 
 const messages = {
   zh: {
-    appEyebrow: '文本工具',
     appTitle: '文本处理工作台',
     statusLabel: '当前文档状态',
     lines: '行',
@@ -70,7 +68,6 @@ const messages = {
     },
   },
   en: {
-    appEyebrow: 'Text Utility',
     appTitle: 'Text Processing Workbench',
     statusLabel: 'Current document status',
     lines: 'lines',
@@ -118,7 +115,8 @@ function App() {
     wholeWord: false,
     useRegex: false,
   })
-  const [replaceVisible, setReplaceVisible] = useState(true)
+  const [findVisible, setFindVisible] = useState(false)
+  const [replaceVisible, setReplaceVisible] = useState(false)
   const [sourceMatches, setSourceMatches] = useState<SearchMatch[]>([])
   const [resultOutputs, setResultOutputs] = useState<ResultOutput[]>([])
   const [status, setStatus] = useState<StatusKey>('ready')
@@ -160,6 +158,7 @@ function App() {
       }
 
       event.preventDefault()
+      setFindVisible(true)
 
       if (event.altKey) {
         setReplaceVisible(true)
@@ -170,6 +169,7 @@ function App() {
         return
       }
 
+      setReplaceVisible(false)
       window.requestAnimationFrame(() => {
         findInputRef.current?.focus()
         findInputRef.current?.select()
@@ -228,6 +228,17 @@ function App() {
 
   function focusEditor() {
     editorRef.current?.focus()
+  }
+
+  function handleFindEscape() {
+    if (replaceVisible) {
+      setReplaceVisible(false)
+      window.requestAnimationFrame(() => findInputRef.current?.focus())
+      return
+    }
+
+    setFindVisible(false)
+    focusEditor()
   }
 
   async function handleReverseLines() {
@@ -306,7 +317,6 @@ function App() {
     <main className="app-shell" data-theme={theme}>
       <header className="app-header">
         <div>
-          <p className="eyebrow">{t.appEyebrow}</p>
           <h1>{t.appTitle}</h1>
         </div>
         <div className="header-metrics" aria-label={t.statusLabel}>
@@ -354,30 +364,26 @@ function App() {
 
       <section className="workspace-grid">
         <div className="workbench-column source-column">
-          <Toolbar
-            replaceQuery={replaceQuery}
-            replaceWith={replaceWith}
-            matchCount={sourceMatches.length}
-            findOptions={findOptions}
-            replaceVisible={replaceVisible}
-            text={toolbarText[language]}
+          <InputEditor
+            editorRef={editorRef}
             findInputRef={findInputRef}
             replaceInputRef={replaceInputRef}
-            onReplaceQueryChange={setReplaceQuery}
+            value={sourceText}
+            searchQuery={replaceQuery}
+            replaceWith={replaceWith}
+            matches={sourceMatches}
+            findOptions={findOptions}
+            findVisible={findVisible}
+            replaceVisible={replaceVisible}
+            text={inputText[language]}
+            onChange={setSourceText}
+            onSearchQueryChange={setReplaceQuery}
             onReplaceWithChange={setReplaceWith}
             onFindOptionChange={updateFindOption}
             onReplaceVisibleChange={setReplaceVisible}
             onReplace={() => void runReplace(false)}
             onReplaceAll={() => void runReplace(true)}
-            onEscape={focusEditor}
-          />
-          <InputEditor
-            editorRef={editorRef}
-            value={sourceText}
-            searchQuery={replaceQuery}
-            matches={sourceMatches}
-            text={inputText[language]}
-            onChange={setSourceText}
+            onFindEscape={handleFindEscape}
             onCopySource={() => void handleCopySource()}
             onCopyHighlights={() => void handleCopyHighlights()}
             onClearSource={() => void handleClearSource()}
@@ -417,45 +423,8 @@ function App() {
   )
 }
 
-const toolbarText = {
-  zh: {
-    eyebrow: '原始文本操作',
-    title: '原始内容工作台',
-    matchCount: (count: number) => `命中 ${count} 项`,
-    replaceEyebrow: '替换',
-    replaceTitle: '查找替换',
-    find: '查找',
-    replaceWith: '替换为',
-    matchHint: (query: string, count: number) => (query ? `匹配 ${count} 项` : '未输入查找内容'),
-    caseSensitive: '区分大小写',
-    wholeWord: '整字',
-    useRegex: '正则',
-    showReplace: '替换',
-    replaceOne: '替换',
-    replaceAll: '全部替换',
-  },
-  en: {
-    eyebrow: 'Source Text Operations',
-    title: 'Source Workbench',
-    matchCount: (count: number) => `${count} matches`,
-    replaceEyebrow: 'Replace',
-    replaceTitle: 'Find and Replace',
-    find: 'Find',
-    replaceWith: 'Replace with',
-    matchHint: (query: string, count: number) => (query ? `${count} matches` : 'No search term'),
-    caseSensitive: 'Match case',
-    wholeWord: 'Whole word',
-    useRegex: 'Regex',
-    showReplace: 'Replace',
-    replaceOne: 'Replace',
-    replaceAll: 'Replace all',
-  },
-}
-
 const inputText = {
   zh: {
-    eyebrow: '输入',
-    title: '原始内容',
     copy: '复制',
     copyHighlights: '复制高亮',
     paste: '粘贴',
@@ -465,11 +434,19 @@ const inputText = {
     deduplicateLines: '去重',
     sortLines: '升序',
     commaToLines: '逗号转行',
+    find: '查找',
+    replaceWith: '替换为',
+    matchCount: (count: number) => `命中 ${count} 项`,
+    matchHint: (query: string, count: number) => (query ? `匹配 ${count} 项` : '输入查找内容'),
+    caseSensitive: '区分大小写',
+    wholeWord: '整字',
+    useRegex: '正则',
+    showReplace: '替换',
+    replaceOne: '替换',
+    replaceAll: '全部替换',
     placeholder: '请输入内容',
   },
   en: {
-    eyebrow: 'Input',
-    title: 'Source Content',
     copy: 'Copy',
     copyHighlights: 'Copy highlights',
     paste: 'Paste',
@@ -479,26 +456,32 @@ const inputText = {
     deduplicateLines: 'Deduplicate',
     sortLines: 'Sort',
     commaToLines: 'Comma to lines',
+    find: 'Find',
+    replaceWith: 'Replace with',
+    matchCount: (count: number) => `${count} matches`,
+    matchHint: (query: string, count: number) => (query ? `${count} matches` : 'Enter a search term'),
+    caseSensitive: 'Match case',
+    wholeWord: 'Whole word',
+    useRegex: 'Regex',
+    showReplace: 'Replace',
+    replaceOne: 'Replace',
+    replaceAll: 'Replace all',
     placeholder: 'Enter content',
   },
 }
 
 const resultText = {
   zh: {
-    eyebrow: '结果工作台',
     title: '转换结果',
     ignoreEmptyLines: '忽略空行',
     convert: '转换',
-    formatEyebrow: '输出格式',
     copy: '复制',
     empty: '转换结果会显示在这里。',
   },
   en: {
-    eyebrow: 'Result Workbench',
     title: 'Conversion Results',
     ignoreEmptyLines: 'Ignore empty lines',
     convert: 'Convert',
-    formatEyebrow: 'Output Format',
     copy: 'Copy',
     empty: 'Conversion results appear here.',
   },

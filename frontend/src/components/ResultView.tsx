@@ -4,11 +4,9 @@ type ResultViewProps = {
   ignoreEmptyLines: boolean
   outputs: ResultOutput[]
   text: {
-    eyebrow: string
     title: string
     ignoreEmptyLines: string
     convert: string
-    formatEyebrow: string
     copy: string
     empty: string
   }
@@ -31,7 +29,6 @@ function ResultView({
     <section className="result-panel workbench-panel">
       <div className="panel-header result-header">
         <div>
-          <p className="eyebrow">{text.eyebrow}</p>
           <h2>{text.title}</h2>
         </div>
         <div className="result-actions">
@@ -54,7 +51,6 @@ function ResultView({
           <article key={item.format} className="result-card">
             <div className="result-card-header">
               <div>
-                <p className="eyebrow">{text.formatEyebrow}</p>
                 <h3>{formatLabels[item.format]}</h3>
               </div>
               <button className="secondary-button" type="button" onClick={() => onCopy(item.output)}>
