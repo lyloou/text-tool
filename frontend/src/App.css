@@ -25,10 +25,11 @@
   --editor-caret: #0f766d;
   --result: #f0f2ec;
   --mark: #f2bd4d;
+  --window-control-safe-width: 132px;
   height: 100vh;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 16px;
+  padding: 10px 16px 16px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 12px;
@@ -65,18 +66,12 @@
 }
 
 .app-header {
-  min-height: 64px;
+  min-height: 32px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 16px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.5) inset,
-    0 18px 40px rgba(17, 24, 28, 0.11);
+  padding-left: var(--window-control-safe-width);
 }
 
 .header-metrics {
@@ -136,17 +131,11 @@
   color: #06100e;
 }
 
-h1,
 h2,
 h3 {
   margin: 0;
   color: var(--text);
   letter-spacing: 0;
-}
-
-h1 {
-  font-size: 23px;
-  font-weight: 780;
 }
 
 h2 {
@@ -686,7 +675,6 @@ mark {
     padding: 10px;
   }
 
-  .app-header,
   .toolbar-row,
   .panel-header,
   .result-title-row,
@@ -695,6 +683,11 @@ mark {
   .result-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .app-header {
+    min-height: auto;
+    padding-left: 116px;
   }
 
   .header-metrics,

@@ -37,7 +37,6 @@ const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
 
 const messages = {
   zh: {
-    appTitle: '文本处理工作台',
     statusLabel: '当前文档状态',
     lines: '行',
     matches: '匹配',
@@ -71,7 +70,6 @@ const messages = {
     },
   },
   en: {
-    appTitle: 'Text Processing Workbench',
     statusLabel: 'Current document status',
     lines: 'lines',
     matches: 'matches',
@@ -330,9 +328,6 @@ function App() {
   return (
     <main className="app-shell" data-theme={theme}>
       <header className="app-header">
-        <div>
-          <h1>{t.appTitle}</h1>
-        </div>
         <div className="header-metrics" aria-label={t.statusLabel}>
           <div className="segmented-control" aria-label={t.theme}>
             <button
