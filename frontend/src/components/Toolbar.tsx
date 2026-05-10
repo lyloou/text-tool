@@ -43,6 +43,7 @@ function Toolbar({
             <label>
               <span>查找</span>
               <input value={replaceQuery} onChange={(event) => onReplaceQueryChange(event.target.value)} />
+              <span className="match-hint">{replaceQuery ? `匹配 ${matchCount} 项` : '未输入查找内容'}</span>
             </label>
             <label>
               <span>替换为</span>
