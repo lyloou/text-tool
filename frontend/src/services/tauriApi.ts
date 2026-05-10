@@ -124,6 +124,15 @@ export async function writeClipboardText(value: string) {
   await writeText(value)
 }
 
+export async function readClipboardText() {
+  if (!isTauriRuntime) {
+    return navigator.clipboard.readText()
+  }
+
+  const { readText } = await import('@tauri-apps/plugin-clipboard-manager')
+  return readText()
+}
+
 function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: boolean) {
   return input
     .split('\n')

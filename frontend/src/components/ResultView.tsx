@@ -51,7 +51,9 @@ function ResultView({
             </div>
             <div className="result-surface">
               {item.output ? (
-                <pre className="result-text">{item.output}</pre>
+                <p className="result-text" title={item.output}>
+                  {item.output}
+                </p>
               ) : (
                 <p className="empty-state">转换结果会显示在这里。</p>
               )}

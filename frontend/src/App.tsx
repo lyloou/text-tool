@@ -7,6 +7,7 @@ import {
   convertAllFormats,
   commaValuesToLines,
   deduplicateLines,
+  readClipboardText,
   replaceText,
   searchMatches,
   sortLinesAscending,
@@ -16,13 +17,14 @@ import {
 } from './services/tauriApi'
 
 function App() {
-  const [sourceText, setSourceText] = useState('line1\nline2')
+  const [sourceText, setSourceText] = useState('')
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [replaceQuery, setReplaceQuery] = useState('')
   const [replaceWith, setReplaceWith] = useState('')
   const [sourceMatches, setSourceMatches] = useState<SearchMatch[]>([])
   const [resultOutputs, setResultOutputs] = useState<ResultOutput[]>([])
   const [status, setStatus] = useState('Ready')
+  const [toastMessage, setToastMessage] = useState('')
 
   const lineCount = useMemo(() => {
     if (!sourceText.length) {
@@ -39,6 +41,15 @@ function App() {
   useEffect(() => {
     void runConvert(sourceText)
   }, [ignoreEmptyLines])
+
+  useEffect(() => {
+    if (!toastMessage) {
+      return
+    }
+
+    const timer = window.setTimeout(() => setToastMessage(''), 1600)
+    return () => window.clearTimeout(timer)
+  }, [toastMessage])
 
   async function runConvert(nextSourceText = sourceText) {
     const outputs = await convertAllFormats(nextSourceText, ignoreEmptyLines)
@@ -91,6 +102,19 @@ function App() {
     setStatus('Converted comma values to lines')
   }
 
+  async function handleClearSource() {
+    setSourceText('')
+    await runConvert('')
+    setStatus('Cleared source text')
+  }
+
+  async function handlePasteSource() {
+    const text = await readClipboardText()
+    setSourceText(text)
+    await runConvert(text)
+    setStatus('Pasted from clipboard')
+  }
+
   async function handleCopy(output: string, label: string) {
     if (!output) {
       return
@@ -98,6 +122,7 @@ function App() {
 
     await writeClipboardText(output)
     setStatus(`Copied ${label}`)
+    setToastMessage('已复制')
   }
 
   return (
@@ -133,6 +158,8 @@ function App() {
             searchQuery={replaceQuery}
             matches={sourceMatches}
             onChange={setSourceText}
+            onClearSource={() => void handleClearSource()}
+            onPasteSource={() => void handlePasteSource()}
           />
         </div>
 
@@ -150,6 +177,12 @@ function App() {
         <span>UTF-8</span>
         <span>Local processing</span>
       </footer>
+
+      {toastMessage ? (
+        <div className="toast" role="status" aria-live="polite">
+          {toastMessage}
+        </div>
+      ) : null}
     </main>
   )
 }

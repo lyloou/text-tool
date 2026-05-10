@@ -157,6 +157,7 @@ h3 {
 
 .source-action-row,
 .result-actions,
+.input-actions,
 .status-bar {
   display: flex;
   align-items: center;
@@ -297,24 +298,27 @@ input:focus,
 }
 
 .result-surface {
-  min-height: 108px;
-  max-height: 220px;
-  overflow: auto;
+  min-height: 42px;
+  overflow: hidden;
   border: 1px solid #d1d8dc;
   border-radius: 5px;
-  padding: 12px;
+  padding: 10px 12px;
   background: #f4f6f5;
 }
 
 .result-text,
 .empty-state {
   margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
   font-family: "SF Mono", "Menlo", "Consolas", ui-monospace, monospace;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 20px;
   color: #26313b;
+}
+
+.result-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .empty-state {
@@ -377,6 +381,22 @@ mark {
   min-height: 28px;
 }
 
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 54px;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 10px 16px;
+  border: 1px solid #0c5f58;
+  border-radius: 6px;
+  background: #12766e;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 14px 30px rgba(18, 35, 42, 0.22);
+}
+
 @media (max-width: 1180px) {
   .workspace-grid,
   .tool-grid {
@@ -399,6 +419,7 @@ mark {
   .toolbar-row,
   .panel-header,
   .result-card-header,
+  .input-actions,
   .result-actions {
     flex-direction: column;
     align-items: stretch;
