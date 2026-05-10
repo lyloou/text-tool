@@ -99,7 +99,8 @@
 }
 
 .segmented-control,
-.language-switch {
+.language-switch,
+.result-visibility-switch {
   display: inline-flex;
   padding: 3px;
   border: 1px solid var(--line);
@@ -108,7 +109,8 @@
 }
 
 .segmented-control button,
-.language-switch button {
+.language-switch button,
+.result-visibility-switch button {
   appearance: none;
   border: 0;
   border-radius: 999px;
@@ -122,13 +124,15 @@
 }
 
 .segmented-control button.active,
-.language-switch button.active {
+.language-switch button.active,
+.result-visibility-switch button.active {
   background: var(--accent);
   color: var(--page);
 }
 
 .app-shell[data-theme='dark'] .segmented-control button.active,
-.app-shell[data-theme='dark'] .language-switch button.active {
+.app-shell[data-theme='dark'] .language-switch button.active,
+.app-shell[data-theme='dark'] .result-visibility-switch button.active {
   color: #06100e;
 }
 
@@ -158,6 +162,10 @@ h3 {
   grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
   gap: 12px;
   min-height: 0;
+}
+
+.workspace-grid.results-collapsed {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .workbench-column,
@@ -493,8 +501,25 @@ input:focus,
 }
 
 .result-header {
+  display: grid;
+  gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
+}
+
+.result-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.result-actions {
+  align-items: stretch;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-strong);
 }
 
 .toggle {
@@ -507,6 +532,7 @@ input:focus,
   background: var(--button);
   border: 1px solid var(--line);
   color: var(--button-text);
+  cursor: pointer;
 }
 
 .toggle input {
@@ -644,6 +670,10 @@ mark {
     grid-template-columns: 1fr;
   }
 
+  .workspace-grid.results-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell {
     height: auto;
     min-height: 100vh;
@@ -659,6 +689,7 @@ mark {
   .app-header,
   .toolbar-row,
   .panel-header,
+  .result-title-row,
   .result-card-header,
   .input-actions,
   .result-actions {

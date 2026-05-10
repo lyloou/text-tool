@@ -33,6 +33,8 @@ type StatusKey =
   | 'copied'
   | 'invalidSearch'
 
+const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
+
 const messages = {
   zh: {
     appTitle: '文本处理工作台',
@@ -110,6 +112,10 @@ function App() {
   const [sourceText, setSourceText] = useState('')
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [wrapWithParentheses, setWrapWithParentheses] = useState(false)
+  const [resultPanelExpanded, setResultPanelExpanded] = useState(() => {
+    const saved = window.localStorage.getItem(resultPanelStorageKey)
+    return saved === null ? true : saved === 'true'
+  })
   const [replaceQuery, setReplaceQuery] = useState('')
   const [replaceWith, setReplaceWith] = useState('')
   const [numericSort, setNumericSort] = useState(false)
@@ -142,8 +148,14 @@ function App() {
   }, [sourceText, replaceQuery, findOptions])
 
   useEffect(() => {
-    void runConvert(sourceText)
-  }, [ignoreEmptyLines, wrapWithParentheses])
+    if (resultPanelExpanded) {
+      void runConvert(sourceText)
+    }
+  }, [sourceText, ignoreEmptyLines, wrapWithParentheses, resultPanelExpanded])
+
+  useEffect(() => {
+    window.localStorage.setItem(resultPanelStorageKey, String(resultPanelExpanded))
+  }, [resultPanelExpanded])
 
   useEffect(() => {
     if (!toastMessage) {
@@ -198,7 +210,6 @@ function App() {
     try {
       const result = await replaceText(sourceText, replaceQuery, replaceWith, findOptions, replaceAllMatches)
       setSourceText(result.output)
-      await runConvert(result.output)
       setStatus('replaced')
     } catch {
       setSourceMatches([])
@@ -247,41 +258,35 @@ function App() {
   async function handleReverseLines() {
     const reversedText = reverseLinesLocal(sourceText)
     setSourceText(reversedText)
-    await runConvert(reversedText)
     setStatus('reversed')
   }
 
   async function handleDeduplicateLines() {
     const result = await deduplicateLines(sourceText)
     setSourceText(result.output)
-    await runConvert(result.output)
     setStatus('deduplicated')
   }
 
   async function handleSortLines() {
     const result = await sortLinesAscending(sourceText, numericSort)
     setSourceText(result.output)
-    await runConvert(result.output)
     setStatus('sorted')
   }
 
   async function handleSortLinesDescending() {
     const result = await sortLinesDescending(sourceText, numericSort)
     setSourceText(result.output)
-    await runConvert(result.output)
     setStatus('sorted')
   }
 
   async function handleCommaValuesToLines() {
     const result = await commaValuesToLines(sourceText)
     setSourceText(result.output)
-    await runConvert(result.output)
     setStatus('commaToLines')
   }
 
   async function handleClearSource() {
     setSourceText('')
-    await runConvert('')
     setStatus('cleared')
   }
 
@@ -309,7 +314,6 @@ function App() {
   async function handlePasteSource() {
     const text = await readClipboardText()
     setSourceText(text)
-    await runConvert(text)
     setStatus('pasted')
   }
 
@@ -362,10 +366,26 @@ function App() {
               English
             </button>
           </div>
+          <div className="result-visibility-switch" aria-label={resultText[language].visibility}>
+            <button
+              className={resultPanelExpanded ? 'active' : ''}
+              type="button"
+              onClick={() => setResultPanelExpanded(true)}
+            >
+              {resultText[language].showResults}
+            </button>
+            <button
+              className={!resultPanelExpanded ? 'active' : ''}
+              type="button"
+              onClick={() => setResultPanelExpanded(false)}
+            >
+              {resultText[language].hideResults}
+            </button>
+          </div>
         </div>
       </header>
 
-      <section className="workspace-grid">
+      <section className={resultPanelExpanded ? 'workspace-grid' : 'workspace-grid results-collapsed'}>
         <div className="workbench-column source-column">
           <InputEditor
             editorRef={editorRef}
@@ -403,17 +423,18 @@ function App() {
           />
         </div>
 
-        <ResultView
-          ignoreEmptyLines={ignoreEmptyLines}
-          wrapWithParentheses={wrapWithParentheses}
-          outputs={resultOutputs}
-          text={resultText[language]}
-          formatLabels={t.formats}
-          onIgnoreEmptyLinesChange={setIgnoreEmptyLines}
-          onWrapWithParenthesesChange={setWrapWithParentheses}
-          onConvert={() => void runConvert()}
-          onCopy={(output) => void handleCopy(output)}
-        />
+        {resultPanelExpanded ? (
+          <ResultView
+            ignoreEmptyLines={ignoreEmptyLines}
+            wrapWithParentheses={wrapWithParentheses}
+            outputs={resultOutputs}
+            text={resultText[language]}
+            formatLabels={t.formats}
+            onIgnoreEmptyLinesChange={setIgnoreEmptyLines}
+            onWrapWithParenthesesChange={setWrapWithParentheses}
+            onCopy={(output) => void handleCopy(output)}
+          />
+        ) : null}
       </section>
 
       <footer className="status-bar">
@@ -498,17 +519,21 @@ const resultText = {
     title: '转换结果',
     ignoreEmptyLines: '忽略空行',
     wrapWithParentheses: '添加括号',
-    convert: '转换',
     copy: '复制',
     empty: '转换结果会显示在这里。',
+    hideResults: '隐藏转换区',
+    showResults: '展开转换区',
+    visibility: '转换区显示',
   },
   en: {
     title: 'Conversion Results',
     ignoreEmptyLines: 'Ignore empty lines',
     wrapWithParentheses: 'Add parentheses',
-    convert: 'Convert',
     copy: 'Copy',
     empty: 'Conversion results appear here.',
+    hideResults: 'Hide conversion area',
+    showResults: 'Show conversion area',
+    visibility: 'Conversion area visibility',
   },
 }
 

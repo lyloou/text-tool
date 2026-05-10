@@ -8,14 +8,12 @@ type ResultViewProps = {
     title: string
     ignoreEmptyLines: string
     wrapWithParentheses: string
-    convert: string
     copy: string
     empty: string
   }
   formatLabels: Record<ResultOutput['format'], string>
   onIgnoreEmptyLinesChange: (value: boolean) => void
   onWrapWithParenthesesChange: (value: boolean) => void
-  onConvert: () => void
   onCopy: (output: string) => void
 }
 
@@ -27,16 +25,17 @@ function ResultView({
   formatLabels,
   onIgnoreEmptyLinesChange,
   onWrapWithParenthesesChange,
-  onConvert,
   onCopy,
 }: ResultViewProps) {
   return (
     <section className="result-panel workbench-panel">
       <div className="panel-header result-header">
-        <div>
-          <h2>{text.title}</h2>
+        <div className="result-title-row">
+          <div>
+            <h2>{text.title}</h2>
+          </div>
         </div>
-        <div className="result-actions">
+        <div className="result-actions" aria-label={text.title}>
           <label className="toggle">
             <input
               type="checkbox"
@@ -53,9 +52,6 @@ function ResultView({
             />
             <span>{text.wrapWithParentheses}</span>
           </label>
-          <button className="primary-button" type="button" onClick={onConvert}>
-            {text.convert}
-          </button>
         </div>
       </div>
 
