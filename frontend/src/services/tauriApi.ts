@@ -27,9 +27,14 @@ const resultFormats: Array<{ format: ConvertMode; label: string }> = [
   { format: 'plain', label: '纯逗号格式' },
 ]
 
-export async function convertLines(input: string, mode: ConvertMode, ignoreEmptyLines: boolean) {
+export async function convertLines(
+  input: string,
+  mode: ConvertMode,
+  ignoreEmptyLines: boolean,
+  wrapWithParentheses: boolean,
+) {
   if (!isTauriRuntime) {
-    return { output: convertLinesLocal(input, mode, ignoreEmptyLines) }
+    return { output: convertLinesLocal(input, mode, ignoreEmptyLines, wrapWithParentheses) }
   }
 
   return invoke<{ output: string }>('convert_lines_command', {
@@ -37,14 +42,19 @@ export async function convertLines(input: string, mode: ConvertMode, ignoreEmpty
       input,
       mode,
       ignoreEmptyLines,
+      wrapWithParentheses,
     },
   })
 }
 
-export async function convertAllFormats(input: string, ignoreEmptyLines: boolean): Promise<ResultOutput[]> {
+export async function convertAllFormats(
+  input: string,
+  ignoreEmptyLines: boolean,
+  wrapWithParentheses: boolean,
+): Promise<ResultOutput[]> {
   const outputs = await Promise.all(
     resultFormats.map(async ({ format, label }) => {
-      const result = await convertLines(input, format, ignoreEmptyLines)
+      const result = await convertLines(input, format, ignoreEmptyLines, wrapWithParentheses)
       return {
         format,
         label,
@@ -155,8 +165,8 @@ export async function readClipboardText() {
   return readText()
 }
 
-function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: boolean) {
-  return input
+function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: boolean, wrapWithParentheses: boolean) {
+  const output = input
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => !ignoreEmptyLines || line.length > 0)
@@ -172,6 +182,8 @@ function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: b
       return line
     })
     .join(',')
+
+  return wrapWithParentheses ? `(${output})` : output
 }
 
 function searchMatchesLocal(output: string, query: string, options: FindOptions) {

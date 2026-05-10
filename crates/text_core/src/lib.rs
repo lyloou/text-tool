@@ -21,20 +21,26 @@ mod tests {
 
     #[test]
     fn converts_to_double_quoted_values() {
-        let output = convert_lines("line1\nline2", ConvertMode::DoubleQuoted, true);
+        let output = convert_lines("line1\nline2", ConvertMode::DoubleQuoted, true, false);
         assert_eq!(output, "\"line1\",\"line2\"");
     }
 
     #[test]
     fn keeps_empty_lines_when_switch_is_off() {
-        let output = convert_lines("line1\n\nline2", ConvertMode::Plain, false);
+        let output = convert_lines("line1\n\nline2", ConvertMode::Plain, false, false);
         assert_eq!(output, "line1,,line2");
     }
 
     #[test]
     fn trims_each_line_before_joining() {
-        let output = convert_lines(" 你好 \n world ", ConvertMode::SingleQuoted, true);
+        let output = convert_lines(" 你好 \n world ", ConvertMode::SingleQuoted, true, false);
         assert_eq!(output, "'你好','world'");
+    }
+
+    #[test]
+    fn wraps_converted_values_with_parentheses() {
+        let output = convert_lines("line1\nline2", ConvertMode::DoubleQuoted, true, true);
+        assert_eq!(output, "(\"line1\",\"line2\")");
     }
 
     #[test]

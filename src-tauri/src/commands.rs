@@ -11,6 +11,7 @@ pub struct ConvertLinesRequest {
     pub input: String,
     pub mode: String,
     pub ignore_empty_lines: bool,
+    pub wrap_with_parentheses: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -75,7 +76,12 @@ pub struct LineOperationResponse {
 #[tauri::command]
 pub fn convert_lines_command(request: ConvertLinesRequest) -> Result<ConvertLinesResponse, String> {
     let mode = parse_mode(&request.mode)?;
-    let output = convert_lines(&request.input, mode, request.ignore_empty_lines);
+    let output = convert_lines(
+        &request.input,
+        mode,
+        request.ignore_empty_lines,
+        request.wrap_with_parentheses,
+    );
     Ok(ConvertLinesResponse { output })
 }
 

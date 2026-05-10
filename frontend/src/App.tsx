@@ -109,6 +109,7 @@ function App() {
   const [theme, setTheme] = useState<Theme>('light')
   const [sourceText, setSourceText] = useState('')
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
+  const [wrapWithParentheses, setWrapWithParentheses] = useState(false)
   const [replaceQuery, setReplaceQuery] = useState('')
   const [replaceWith, setReplaceWith] = useState('')
   const [numericSort, setNumericSort] = useState(false)
@@ -142,7 +143,7 @@ function App() {
 
   useEffect(() => {
     void runConvert(sourceText)
-  }, [ignoreEmptyLines])
+  }, [ignoreEmptyLines, wrapWithParentheses])
 
   useEffect(() => {
     if (!toastMessage) {
@@ -183,7 +184,7 @@ function App() {
   }, [])
 
   async function runConvert(nextSourceText = sourceText) {
-    const outputs = await convertAllFormats(nextSourceText, ignoreEmptyLines)
+    const outputs = await convertAllFormats(nextSourceText, ignoreEmptyLines, wrapWithParentheses)
     setResultOutputs(outputs)
     setStatus('converted')
   }
@@ -411,10 +412,12 @@ function App() {
 
         <ResultView
           ignoreEmptyLines={ignoreEmptyLines}
+          wrapWithParentheses={wrapWithParentheses}
           outputs={resultOutputs}
           text={resultText[language]}
           formatLabels={t.formats}
           onIgnoreEmptyLinesChange={setIgnoreEmptyLines}
+          onWrapWithParenthesesChange={setWrapWithParentheses}
           onConvert={() => void runConvert()}
           onCopy={(output) => void handleCopy(output)}
         />
@@ -442,7 +445,7 @@ const inputText = {
     paste: '粘贴',
     clear: '清除',
     lineTools: '行工具',
-    reverseLines: '逆序',
+    reverseLines: '倒排行',
     deduplicateLines: '去重',
     sortLines: '升序',
     sortLinesDescending: '降序',
@@ -490,6 +493,7 @@ const resultText = {
   zh: {
     title: '转换结果',
     ignoreEmptyLines: '忽略空行',
+    wrapWithParentheses: '添加括号',
     convert: '转换',
     copy: '复制',
     empty: '转换结果会显示在这里。',
@@ -497,6 +501,7 @@ const resultText = {
   en: {
     title: 'Conversion Results',
     ignoreEmptyLines: 'Ignore empty lines',
+    wrapWithParentheses: 'Add parentheses',
     convert: 'Convert',
     copy: 'Copy',
     empty: 'Conversion results appear here.',

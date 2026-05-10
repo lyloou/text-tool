@@ -5,7 +5,12 @@ pub enum ConvertMode {
     Plain,
 }
 
-pub fn convert_lines(input: &str, mode: ConvertMode, ignore_empty_lines: bool) -> String {
+pub fn convert_lines(
+    input: &str,
+    mode: ConvertMode,
+    ignore_empty_lines: bool,
+    wrap_with_parentheses: bool,
+) -> String {
     let items = input
         .lines()
         .map(str::trim)
@@ -17,5 +22,11 @@ pub fn convert_lines(input: &str, mode: ConvertMode, ignore_empty_lines: bool) -
         })
         .collect::<Vec<_>>();
 
-    items.join(",")
+    let output = items.join(",");
+
+    if wrap_with_parentheses {
+        format!("({output})")
+    } else {
+        output
+    }
 }

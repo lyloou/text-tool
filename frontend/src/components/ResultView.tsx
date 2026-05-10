@@ -2,26 +2,31 @@ import type { ResultOutput } from '../services/tauriApi'
 
 type ResultViewProps = {
   ignoreEmptyLines: boolean
+  wrapWithParentheses: boolean
   outputs: ResultOutput[]
   text: {
     title: string
     ignoreEmptyLines: string
+    wrapWithParentheses: string
     convert: string
     copy: string
     empty: string
   }
   formatLabels: Record<ResultOutput['format'], string>
   onIgnoreEmptyLinesChange: (value: boolean) => void
+  onWrapWithParenthesesChange: (value: boolean) => void
   onConvert: () => void
   onCopy: (output: string) => void
 }
 
 function ResultView({
   ignoreEmptyLines,
+  wrapWithParentheses,
   outputs,
   text,
   formatLabels,
   onIgnoreEmptyLinesChange,
+  onWrapWithParenthesesChange,
   onConvert,
   onCopy,
 }: ResultViewProps) {
@@ -39,6 +44,14 @@ function ResultView({
               onChange={(event) => onIgnoreEmptyLinesChange(event.target.checked)}
             />
             <span>{text.ignoreEmptyLines}</span>
+          </label>
+          <label className="toggle">
+            <input
+              type="checkbox"
+              checked={wrapWithParentheses}
+              onChange={(event) => onWrapWithParenthesesChange(event.target.checked)}
+            />
+            <span>{text.wrapWithParentheses}</span>
           </label>
           <button className="primary-button" type="button" onClick={onConvert}>
             {text.convert}
