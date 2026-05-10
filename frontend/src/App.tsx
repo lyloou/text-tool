@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react'
 import './App.css'
 import InputEditor from './components/InputEditor'
 import ResultView from './components/ResultView'
@@ -34,6 +34,7 @@ type StatusKey =
   | 'invalidSearch'
 
 const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
+const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
 const messages = {
   zh: {
@@ -325,56 +326,77 @@ function App() {
     setToastMessage(t.toastCopied)
   }
 
+  async function handleWindowDrag(event: PointerEvent<HTMLElement>) {
+    if (!isTauriRuntime || event.button !== 0 || event.target !== event.currentTarget) {
+      return
+    }
+
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    await getCurrentWindow().startDragging()
+  }
+
   return (
     <main className="app-shell" data-theme={theme}>
-      <header className="app-header">
+      <header className="app-header" onPointerDown={handleWindowDrag}>
         <div className="header-metrics" aria-label={t.statusLabel}>
           <div className="segmented-control" aria-label={t.theme}>
             <button
               className={theme === 'light' ? 'active' : ''}
               type="button"
+              title={t.lightTheme}
+              aria-label={t.lightTheme}
               onClick={() => setTheme('light')}
             >
-              {t.lightTheme}
+              ☀
             </button>
             <button
               className={theme === 'dark' ? 'active' : ''}
               type="button"
+              title={t.darkTheme}
+              aria-label={t.darkTheme}
               onClick={() => setTheme('dark')}
             >
-              {t.darkTheme}
+              ◐
             </button>
           </div>
           <div className="language-switch" aria-label={t.language}>
             <button
               className={language === 'zh' ? 'active' : ''}
               type="button"
+              title="中文"
+              aria-label="中文"
               onClick={() => setLanguage('zh')}
             >
-              中文
+              中
             </button>
             <button
               className={language === 'en' ? 'active' : ''}
               type="button"
+              title="English"
+              aria-label="English"
               onClick={() => setLanguage('en')}
             >
-              English
+              EN
             </button>
           </div>
           <div className="result-visibility-switch" aria-label={resultText[language].visibility}>
             <button
               className={resultPanelExpanded ? 'active' : ''}
               type="button"
+              title={resultText[language].showResults}
+              aria-label={resultText[language].showResults}
               onClick={() => setResultPanelExpanded(true)}
             >
-              {resultText[language].showResults}
+              ▣
             </button>
             <button
               className={!resultPanelExpanded ? 'active' : ''}
               type="button"
+              title={resultText[language].hideResults}
+              aria-label={resultText[language].hideResults}
               onClick={() => setResultPanelExpanded(false)}
             >
-              {resultText[language].hideResults}
+              □
             </button>
           </div>
         </div>

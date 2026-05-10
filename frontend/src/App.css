@@ -107,11 +107,12 @@
 .language-switch button,
 .result-visibility-switch button {
   appearance: none;
+  min-width: 28px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  padding: 5px 9px;
+  padding: 5px 7px;
   font: inherit;
   font-size: 12px;
   font-weight: 700;
