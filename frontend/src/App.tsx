@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import InputEditor from './components/InputEditor'
 import ResultView from './components/ResultView'
@@ -12,6 +12,7 @@ import {
   searchMatches,
   sortLinesAscending,
   writeClipboardText,
+  type FindOptions,
   type ResultOutput,
   type SearchMatch,
 } from './services/tauriApi'
@@ -30,6 +31,7 @@ type StatusKey =
   | 'cleared'
   | 'pasted'
   | 'copied'
+  | 'invalidSearch'
 
 const messages = {
   zh: {
@@ -42,6 +44,7 @@ const messages = {
     theme: '主题',
     lightTheme: '日间',
     darkTheme: '夜间',
+    invalidSearch: '查找表达式无效',
     footerReady: '已准备处理 UTF-8 文本',
     footerEncoding: 'UTF-8',
     footerLocal: '本地处理',
@@ -63,6 +66,7 @@ const messages = {
       cleared: '已清除原始内容',
       pasted: '已从剪贴板粘贴',
       copied: '已复制',
+      invalidSearch: '查找表达式无效',
     },
   },
   en: {
@@ -75,6 +79,7 @@ const messages = {
     theme: 'Theme',
     lightTheme: 'Light',
     darkTheme: 'Dark',
+    invalidSearch: 'Invalid search expression',
     footerReady: 'Ready for UTF-8 source text',
     footerEncoding: 'UTF-8',
     footerLocal: 'Local processing',
@@ -96,6 +101,7 @@ const messages = {
       cleared: 'Cleared source text',
       pasted: 'Pasted from clipboard',
       copied: 'Copied',
+      invalidSearch: 'Invalid search expression',
     },
   },
 } satisfies Record<Language, object>
@@ -107,10 +113,19 @@ function App() {
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [replaceQuery, setReplaceQuery] = useState('')
   const [replaceWith, setReplaceWith] = useState('')
+  const [findOptions, setFindOptions] = useState<FindOptions>({
+    caseSensitive: false,
+    wholeWord: false,
+    useRegex: false,
+  })
+  const [replaceVisible, setReplaceVisible] = useState(true)
   const [sourceMatches, setSourceMatches] = useState<SearchMatch[]>([])
   const [resultOutputs, setResultOutputs] = useState<ResultOutput[]>([])
   const [status, setStatus] = useState<StatusKey>('ready')
   const [toastMessage, setToastMessage] = useState('')
+  const findInputRef = useRef<HTMLInputElement>(null)
+  const replaceInputRef = useRef<HTMLInputElement>(null)
+  const editorRef = useRef<HTMLTextAreaElement>(null)
   const t = messages[language]
 
   const lineCount = useMemo(() => {
@@ -123,7 +138,7 @@ function App() {
 
   useEffect(() => {
     void refreshMatches(sourceText, replaceQuery)
-  }, [sourceText, replaceQuery])
+  }, [sourceText, replaceQuery, findOptions])
 
   useEffect(() => {
     void runConvert(sourceText)
@@ -138,17 +153,55 @@ function App() {
     return () => window.clearTimeout(timer)
   }, [toastMessage])
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!event.metaKey || event.shiftKey || event.ctrlKey || event.key.toLowerCase() !== 'f') {
+        return
+      }
+
+      event.preventDefault()
+
+      if (event.altKey) {
+        setReplaceVisible(true)
+        window.requestAnimationFrame(() => {
+          replaceInputRef.current?.focus()
+          replaceInputRef.current?.select()
+        })
+        return
+      }
+
+      window.requestAnimationFrame(() => {
+        findInputRef.current?.focus()
+        findInputRef.current?.select()
+      })
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   async function runConvert(nextSourceText = sourceText) {
     const outputs = await convertAllFormats(nextSourceText, ignoreEmptyLines)
     setResultOutputs(outputs)
     setStatus('converted')
   }
 
-  async function runReplace() {
-    const result = await replaceText(sourceText, replaceQuery, replaceWith)
-    setSourceText(result.output)
-    await runConvert(result.output)
-    setStatus(replaceQuery ? 'replaced' : 'noSearchTerm')
+  async function runReplace(replaceAllMatches: boolean) {
+    if (!replaceQuery) {
+      setStatus('noSearchTerm')
+      return
+    }
+
+    try {
+      const result = await replaceText(sourceText, replaceQuery, replaceWith, findOptions, replaceAllMatches)
+      setSourceText(result.output)
+      await runConvert(result.output)
+      setStatus('replaced')
+    } catch {
+      setSourceMatches([])
+      setStatus('invalidSearch')
+      setToastMessage(t.invalidSearch)
+    }
   }
 
   async function refreshMatches(text: string, query: string) {
@@ -157,8 +210,24 @@ function App() {
       return
     }
 
-    const result = await searchMatches(text, query, false)
-    setSourceMatches(result.matches)
+    try {
+      const result = await searchMatches(text, query, findOptions)
+      setSourceMatches(result.matches)
+    } catch {
+      setSourceMatches([])
+      setStatus('invalidSearch')
+    }
+  }
+
+  function updateFindOption(option: keyof FindOptions, value: boolean) {
+    setFindOptions((current) => ({
+      ...current,
+      [option]: value,
+    }))
+  }
+
+  function focusEditor() {
+    editorRef.current?.focus()
   }
 
   async function handleReverseLines() {
@@ -278,16 +347,21 @@ function App() {
             replaceQuery={replaceQuery}
             replaceWith={replaceWith}
             matchCount={sourceMatches.length}
+            findOptions={findOptions}
+            replaceVisible={replaceVisible}
             text={toolbarText[language]}
+            findInputRef={findInputRef}
+            replaceInputRef={replaceInputRef}
             onReplaceQueryChange={setReplaceQuery}
             onReplaceWithChange={setReplaceWith}
-            onReplace={() => void runReplace()}
-            onReverseLines={() => void handleReverseLines()}
-            onDeduplicateLines={() => void handleDeduplicateLines()}
-            onSortLines={() => void handleSortLines()}
-            onCommaValuesToLines={() => void handleCommaValuesToLines()}
+            onFindOptionChange={updateFindOption}
+            onReplaceVisibleChange={setReplaceVisible}
+            onReplace={() => void runReplace(false)}
+            onReplaceAll={() => void runReplace(true)}
+            onEscape={focusEditor}
           />
           <InputEditor
+            editorRef={editorRef}
             value={sourceText}
             searchQuery={replaceQuery}
             matches={sourceMatches}
@@ -296,6 +370,10 @@ function App() {
             onCopySource={() => void handleCopySource()}
             onClearSource={() => void handleClearSource()}
             onPasteSource={() => void handlePasteSource()}
+            onReverseLines={() => void handleReverseLines()}
+            onDeduplicateLines={() => void handleDeduplicateLines()}
+            onSortLines={() => void handleSortLines()}
+            onCommaValuesToLines={() => void handleCommaValuesToLines()}
           />
         </div>
 
@@ -335,13 +413,12 @@ const toolbarText = {
     find: '查找',
     replaceWith: '替换为',
     matchHint: (query: string, count: number) => (query ? `匹配 ${count} 项` : '未输入查找内容'),
-    applyReplace: '应用替换到原始内容',
-    lineToolsEyebrow: '行工具',
-    lineToolsTitle: '行处理',
-    reverseLines: '按行逆序',
-    deduplicateLines: '按行去重',
-    sortLines: '升序排序',
-    commaToLines: '逗号转行',
+    caseSensitive: '区分大小写',
+    wholeWord: '整字',
+    useRegex: '正则',
+    showReplace: '替换',
+    replaceOne: '替换',
+    replaceAll: '全部替换',
   },
   en: {
     eyebrow: 'Source Text Operations',
@@ -352,13 +429,12 @@ const toolbarText = {
     find: 'Find',
     replaceWith: 'Replace with',
     matchHint: (query: string, count: number) => (query ? `${count} matches` : 'No search term'),
-    applyReplace: 'Apply replacement',
-    lineToolsEyebrow: 'Line Tools',
-    lineToolsTitle: 'Line Processing',
-    reverseLines: 'Reverse lines',
-    deduplicateLines: 'Deduplicate',
-    sortLines: 'Sort ascending',
-    commaToLines: 'Comma to lines',
+    caseSensitive: 'Match case',
+    wholeWord: 'Whole word',
+    useRegex: 'Regex',
+    showReplace: 'Replace',
+    replaceOne: 'Replace',
+    replaceAll: 'Replace all',
   },
 }
 
@@ -369,6 +445,11 @@ const inputText = {
     copy: '复制',
     paste: '粘贴',
     clear: '清除',
+    lineTools: '行工具',
+    reverseLines: '逆序',
+    deduplicateLines: '去重',
+    sortLines: '升序',
+    commaToLines: '逗号转行',
     placeholder: '请输入内容',
   },
   en: {
@@ -377,6 +458,11 @@ const inputText = {
     copy: 'Copy',
     paste: 'Paste',
     clear: 'Clear',
+    lineTools: 'Line tools',
+    reverseLines: 'Reverse',
+    deduplicateLines: 'Deduplicate',
+    sortLines: 'Sort',
+    commaToLines: 'Comma to lines',
     placeholder: 'Enter content',
   },
 }

@@ -7,6 +7,12 @@ export type SearchMatch = {
   end: number
 }
 
+export type FindOptions = {
+  caseSensitive: boolean
+  wholeWord: boolean
+  useRegex: boolean
+}
+
 export type ResultOutput = {
   format: ConvertMode
   label: string
@@ -50,9 +56,9 @@ export async function convertAllFormats(input: string, ignoreEmptyLines: boolean
   return outputs
 }
 
-export async function replaceText(input: string, find: string, replaceWith: string) {
+export async function replaceText(input: string, find: string, replaceWith: string, options: FindOptions, replaceAll: boolean) {
   if (!isTauriRuntime) {
-    return { output: find ? input.replaceAll(find, replaceWith) : input }
+    return { output: replaceTextLocal(input, find, replaceWith, options, replaceAll) }
   }
 
   return invoke<{ output: string }>('replace_text_command', {
@@ -60,6 +66,8 @@ export async function replaceText(input: string, find: string, replaceWith: stri
       input,
       find,
       replaceWith,
+      ...options,
+      replaceAll,
     },
   })
 }
@@ -100,16 +108,16 @@ export async function commaValuesToLines(input: string) {
   })
 }
 
-export async function searchMatches(text: string, query: string, caseSensitive: boolean) {
+export async function searchMatches(text: string, query: string, options: FindOptions) {
   if (!isTauriRuntime) {
-    return { matches: searchMatchesLocal(text, query, caseSensitive) }
+    return { matches: searchMatchesLocal(text, query, options) }
   }
 
   return invoke<{ matches: SearchMatch[] }>('search_matches_command', {
     request: {
       output: text,
       query,
-      caseSensitive,
+      ...options,
     },
   })
 }
@@ -152,13 +160,12 @@ function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: b
     .join(',')
 }
 
-function searchMatchesLocal(output: string, query: string, caseSensitive: boolean) {
+function searchMatchesLocal(output: string, query: string, options: FindOptions) {
   if (!query) {
     return []
   }
 
-  const flags = caseSensitive ? 'g' : 'gi'
-  const regex = new RegExp(escapeRegExp(query), flags)
+  const regex = buildFindRegex(query, options)
   const matches: SearchMatch[] = []
 
   for (const match of output.matchAll(regex)) {
@@ -171,6 +178,21 @@ function searchMatchesLocal(output: string, query: string, caseSensitive: boolea
   }
 
   return matches
+}
+
+function replaceTextLocal(
+  input: string,
+  find: string,
+  replaceWith: string,
+  options: FindOptions,
+  replaceAll: boolean,
+) {
+  if (!find) {
+    return input
+  }
+
+  const regex = buildFindRegex(find, options, replaceAll)
+  return input.replace(regex, replaceWith)
 }
 
 function deduplicateLinesLocal(input: string) {
@@ -214,4 +236,11 @@ function stripWrappingQuotes(value: string) {
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function buildFindRegex(query: string, options: FindOptions, replaceAll = true) {
+  const flags = `${replaceAll ? 'g' : ''}${options.caseSensitive ? '' : 'i'}`
+  const pattern = options.useRegex ? query : escapeRegExp(query)
+  const wholeWordPattern = options.wholeWord ? `\\b(?:${pattern})\\b` : pattern
+  return new RegExp(wholeWordPattern, flags)
 }

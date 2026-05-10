@@ -217,8 +217,9 @@ h3 {
   background: var(--panel-soft);
 }
 
-.quick-actions {
-  align-content: start;
+.replace-tool {
+  grid-template-columns: minmax(130px, 0.2fr) minmax(320px, 1fr) auto auto;
+  align-items: start;
 }
 
 .mini-tool-header {
@@ -239,7 +240,8 @@ h3 {
 .source-action-row,
 .result-actions,
 .input-actions,
-.status-bar {
+.status-bar,
+.find-option-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -248,6 +250,71 @@ h3 {
 
 .compact-actions {
   align-items: stretch;
+}
+
+.line-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-strong);
+}
+
+.line-action-bar > span {
+  margin-right: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.line-action-button {
+  appearance: none;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--button);
+  color: var(--button-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.option-chip {
+  appearance: none;
+  min-height: 32px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--button);
+  color: var(--button-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.option-chip span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.option-chip.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.option-chip.active span {
+  color: var(--accent-strong);
 }
 
 label span {
@@ -284,7 +351,7 @@ input:focus,
   padding: 12px;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 10px;
 }
 
@@ -495,7 +562,8 @@ mark {
 
 @media (max-width: 1180px) {
   .workspace-grid,
-  .tool-grid {
+  .tool-grid,
+  .replace-tool {
     grid-template-columns: 1fr;
   }
 
@@ -531,7 +599,8 @@ mark {
   }
 
   .primary-button,
-  .secondary-button {
+  .secondary-button,
+  .line-action-button {
     width: 100%;
   }
 

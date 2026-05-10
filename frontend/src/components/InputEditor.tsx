@@ -1,7 +1,8 @@
-import { useRef } from 'react'
+import { useRef, type RefObject } from 'react'
 import type { SearchMatch } from '../services/tauriApi'
 
 type InputEditorProps = {
+  editorRef: RefObject<HTMLTextAreaElement | null>
   value: string
   searchQuery: string
   matches: SearchMatch[]
@@ -11,15 +12,25 @@ type InputEditorProps = {
     copy: string
     paste: string
     clear: string
+    lineTools: string
+    reverseLines: string
+    deduplicateLines: string
+    sortLines: string
+    commaToLines: string
     placeholder: string
   }
   onChange: (value: string) => void
   onCopySource: () => void
   onClearSource: () => void
   onPasteSource: () => void
+  onReverseLines: () => void
+  onDeduplicateLines: () => void
+  onSortLines: () => void
+  onCommaValuesToLines: () => void
 }
 
 function InputEditor({
+  editorRef,
   value,
   searchQuery,
   matches,
@@ -28,6 +39,10 @@ function InputEditor({
   onCopySource,
   onClearSource,
   onPasteSource,
+  onReverseLines,
+  onDeduplicateLines,
+  onSortLines,
+  onCommaValuesToLines,
 }: InputEditorProps) {
   const highlightRef = useRef<HTMLDivElement>(null)
 
@@ -59,11 +74,27 @@ function InputEditor({
           </button>
         </div>
       </div>
+      <div className="line-action-bar" aria-label={text.lineTools}>
+        <span>{text.lineTools}</span>
+        <button className="line-action-button" type="button" onClick={onReverseLines}>
+          {text.reverseLines}
+        </button>
+        <button className="line-action-button" type="button" onClick={onDeduplicateLines}>
+          {text.deduplicateLines}
+        </button>
+        <button className="line-action-button" type="button" onClick={onSortLines}>
+          {text.sortLines}
+        </button>
+        <button className="line-action-button" type="button" onClick={onCommaValuesToLines}>
+          {text.commaToLines}
+        </button>
+      </div>
       <div className="editor-stack">
         <div ref={highlightRef} className="editor-highlight-layer" aria-hidden="true">
           <pre className="editor-highlight-text">{renderHighlightedText(value, searchQuery, matches)}</pre>
         </div>
         <textarea
+          ref={editorRef}
           className="editor editor-overlay"
           value={value}
           onChange={(event) => onChange(event.target.value)}

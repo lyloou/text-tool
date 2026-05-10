@@ -4,15 +4,16 @@ mod search;
 mod transform;
 
 pub use reorder::{comma_values_to_lines, deduplicate_lines, reverse_lines, sort_lines_ascending};
-pub use replace::replace_text;
-pub use search::{SearchMatch, search_matches};
+pub use replace::{replace_all, replace_first, replace_text};
+pub use search::{FindOptions, SearchMatch, search_matches};
 pub use transform::{ConvertMode, convert_lines};
 
 #[cfg(test)]
 mod tests {
     use super::{
         ConvertMode, SearchMatch, comma_values_to_lines, convert_lines, deduplicate_lines,
-        replace_text, reverse_lines, search_matches, sort_lines_ascending,
+        FindOptions, replace_all, replace_first, replace_text, reverse_lines, search_matches,
+        sort_lines_ascending,
     };
 
     #[test]
@@ -83,7 +84,7 @@ mod tests {
 
     #[test]
     fn finds_case_sensitive_matches() {
-        let matches = search_matches("line1,line2,line1", "line1", true);
+        let matches = search_matches("line1,line2,line1", "line1", find_options(true, false, false)).unwrap();
         assert_eq!(
             matches,
             vec![
@@ -95,7 +96,7 @@ mod tests {
 
     #[test]
     fn finds_case_insensitive_matches() {
-        let matches = search_matches("Line,line,LINE", "line", false);
+        let matches = search_matches("Line,line,LINE", "line", find_options(false, false, false)).unwrap();
         assert_eq!(
             matches,
             vec![
@@ -104,5 +105,61 @@ mod tests {
                 SearchMatch { start: 10, end: 14 },
             ]
         );
+    }
+
+    #[test]
+    fn finds_whole_word_matches() {
+        let matches = search_matches("cat catalog cat_1 cat", "cat", find_options(true, true, false)).unwrap();
+        assert_eq!(
+            matches,
+            vec![
+                SearchMatch { start: 0, end: 3 },
+                SearchMatch { start: 18, end: 21 },
+            ]
+        );
+    }
+
+    #[test]
+    fn finds_regex_matches() {
+        let matches = search_matches("item-1 item-22 item-x", r"item-\d+", find_options(true, false, true)).unwrap();
+        assert_eq!(
+            matches,
+            vec![
+                SearchMatch { start: 0, end: 6 },
+                SearchMatch { start: 7, end: 14 },
+            ]
+        );
+    }
+
+    #[test]
+    fn returns_regex_errors() {
+        let result = search_matches("text", "(", find_options(true, false, true));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn replaces_first_match_with_options() {
+        let output = replace_first("Alpha alpha alpha", "alpha", "omega", find_options(false, false, false)).unwrap();
+        assert_eq!(output, "omega alpha alpha");
+    }
+
+    #[test]
+    fn replaces_all_matches_with_options() {
+        let output = replace_all("cat catalog cat", "cat", "dog", find_options(true, true, false)).unwrap();
+        assert_eq!(output, "dog catalog dog");
+    }
+
+    #[test]
+    fn replaces_regex_captures() {
+        let output = replace_all("item-1 item-22", r"item-(\d+)", "id-$1", find_options(true, false, true)).unwrap();
+        assert_eq!(output, "id-1 id-22");
+    }
+
+    fn find_options(case_sensitive: bool, whole_word: bool, use_regex: bool) -> FindOptions {
+        FindOptions {
+            case_sensitive,
+            whole_word,
+            use_regex,
+        }
     }
 }

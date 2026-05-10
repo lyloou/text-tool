@@ -7,22 +7,42 @@ pub struct SearchMatch {
     pub end: usize,
 }
 
-pub fn search_matches(output: &str, query: &str, case_sensitive: bool) -> Vec<SearchMatch> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FindOptions {
+    pub case_sensitive: bool,
+    pub whole_word: bool,
+    pub use_regex: bool,
+}
+
+pub fn search_matches(output: &str, query: &str, options: FindOptions) -> Result<Vec<SearchMatch>, String> {
     if query.is_empty() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
 
-    let pattern = regex::escape(query);
-    let regex = RegexBuilder::new(&pattern)
-        .case_insensitive(!case_sensitive)
-        .build()
-        .expect("escaped query should always compile");
+    let regex = build_find_regex(query, options)?;
 
-    regex
+    Ok(regex
         .find_iter(output)
         .map(|found| SearchMatch {
             start: found.start(),
             end: found.end(),
         })
-        .collect()
+        .collect())
+}
+
+pub(crate) fn build_find_regex(query: &str, options: FindOptions) -> Result<regex::Regex, String> {
+    let mut pattern = if options.use_regex {
+        query.to_string()
+    } else {
+        regex::escape(query)
+    };
+
+    if options.whole_word {
+        pattern = format!(r"\b(?:{})\b", pattern);
+    }
+
+    RegexBuilder::new(&pattern)
+        .case_insensitive(!options.case_sensitive)
+        .build()
+        .map_err(|error| error.to_string())
 }
