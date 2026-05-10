@@ -274,6 +274,17 @@ function App() {
     setToastMessage(t.toastCopied)
   }
 
+  async function handleCopyHighlights() {
+    if (!replaceQuery || !sourceMatches.length) {
+      return
+    }
+
+    const highlightedText = sourceMatches.map((match) => sourceText.slice(match.start, match.end)).join('\n')
+    await writeClipboardText(highlightedText)
+    setStatus('copied')
+    setToastMessage(t.toastCopied)
+  }
+
   async function handlePasteSource() {
     const text = await readClipboardText()
     setSourceText(text)
@@ -368,8 +379,11 @@ function App() {
             text={inputText[language]}
             onChange={setSourceText}
             onCopySource={() => void handleCopySource()}
+            onCopyHighlights={() => void handleCopyHighlights()}
             onClearSource={() => void handleClearSource()}
             onPasteSource={() => void handlePasteSource()}
+            showCopyHighlights={replaceQuery.length > 0}
+            canCopyHighlights={sourceMatches.length > 0}
             onReverseLines={() => void handleReverseLines()}
             onDeduplicateLines={() => void handleDeduplicateLines()}
             onSortLines={() => void handleSortLines()}
@@ -443,6 +457,7 @@ const inputText = {
     eyebrow: '输入',
     title: '原始内容',
     copy: '复制',
+    copyHighlights: '复制高亮',
     paste: '粘贴',
     clear: '清除',
     lineTools: '行工具',
@@ -456,6 +471,7 @@ const inputText = {
     eyebrow: 'Input',
     title: 'Source Content',
     copy: 'Copy',
+    copyHighlights: 'Copy highlights',
     paste: 'Paste',
     clear: 'Clear',
     lineTools: 'Line tools',

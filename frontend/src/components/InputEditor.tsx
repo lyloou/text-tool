@@ -10,6 +10,7 @@ type InputEditorProps = {
     eyebrow: string
     title: string
     copy: string
+    copyHighlights: string
     paste: string
     clear: string
     lineTools: string
@@ -21,8 +22,11 @@ type InputEditorProps = {
   }
   onChange: (value: string) => void
   onCopySource: () => void
+  onCopyHighlights: () => void
   onClearSource: () => void
   onPasteSource: () => void
+  showCopyHighlights: boolean
+  canCopyHighlights: boolean
   onReverseLines: () => void
   onDeduplicateLines: () => void
   onSortLines: () => void
@@ -37,8 +41,11 @@ function InputEditor({
   text,
   onChange,
   onCopySource,
+  onCopyHighlights,
   onClearSource,
   onPasteSource,
+  showCopyHighlights,
+  canCopyHighlights,
   onReverseLines,
   onDeduplicateLines,
   onSortLines,
@@ -63,6 +70,16 @@ function InputEditor({
           <h2>{text.title}</h2>
         </div>
         <div className="input-actions">
+          {showCopyHighlights ? (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={onCopyHighlights}
+              disabled={!canCopyHighlights}
+            >
+              {text.copyHighlights}
+            </button>
+          ) : null}
           <button className="secondary-button" type="button" onClick={onCopySource}>
             {text.copy}
           </button>
