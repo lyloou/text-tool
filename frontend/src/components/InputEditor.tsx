@@ -33,6 +33,7 @@ type InputEditorProps = {
     wholeWord: string
     useRegex: string
     showReplace: string
+    hideReplace: string
     replaceOne: string
     replaceAll: string
     placeholder: string
@@ -111,15 +112,40 @@ function InputEditor({
     }
   }
 
+  function runToolbarAction(event: React.PointerEvent<HTMLButtonElement>, action: () => void) {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return
+    }
+
+    event.preventDefault()
+    action()
+  }
+
+  function runKeyboardAction(event: React.MouseEvent<HTMLButtonElement>, action: () => void) {
+    if (event.detail === 0) {
+      action()
+    }
+  }
+
   return (
     <section className="panel editor-panel">
       <div className="editor-toolbar" aria-label={text.lineTools}>
         <div className="line-action-bar">
           <div className="sort-action-group">
-            <button className="line-action-button" type="button" onClick={onSortLines}>
+            <button
+              className="line-action-button"
+              type="button"
+              onPointerDown={(event) => runToolbarAction(event, onSortLines)}
+              onClick={(event) => runKeyboardAction(event, onSortLines)}
+            >
               {text.sortLines}
             </button>
-            <button className="line-action-button" type="button" onClick={onSortLinesDescending}>
+            <button
+              className="line-action-button"
+              type="button"
+              onPointerDown={(event) => runToolbarAction(event, onSortLinesDescending)}
+              onClick={(event) => runKeyboardAction(event, onSortLinesDescending)}
+            >
               {text.sortLinesDescending}
             </button>
             <button
@@ -136,13 +162,28 @@ function InputEditor({
             </button>
           </div>
           <div className="line-transform-group">
-            <button className="line-action-button" type="button" onClick={onReverseLines}>
+            <button
+              className="line-action-button"
+              type="button"
+              onPointerDown={(event) => runToolbarAction(event, onReverseLines)}
+              onClick={(event) => runKeyboardAction(event, onReverseLines)}
+            >
               {text.reverseLines}
             </button>
-            <button className="line-action-button" type="button" onClick={onDeduplicateLines}>
+            <button
+              className="line-action-button"
+              type="button"
+              onPointerDown={(event) => runToolbarAction(event, onDeduplicateLines)}
+              onClick={(event) => runKeyboardAction(event, onDeduplicateLines)}
+            >
               {text.deduplicateLines}
             </button>
-            <button className="line-action-button" type="button" onClick={onCommaValuesToLines}>
+            <button
+              className="line-action-button"
+              type="button"
+              onPointerDown={(event) => runToolbarAction(event, onCommaValuesToLines)}
+              onClick={(event) => runKeyboardAction(event, onCommaValuesToLines)}
+            >
               {text.commaToLines}
             </button>
           </div>
@@ -152,19 +193,35 @@ function InputEditor({
             <button
               className="secondary-button"
               type="button"
-              onClick={onCopyHighlights}
+              onPointerDown={(event) => runToolbarAction(event, onCopyHighlights)}
+              onClick={(event) => runKeyboardAction(event, onCopyHighlights)}
               disabled={!canCopyHighlights}
             >
               {text.copyHighlights}
             </button>
           ) : null}
-          <button className="secondary-button" type="button" onClick={onCopySource}>
+          <button
+            className="secondary-button"
+            type="button"
+            onPointerDown={(event) => runToolbarAction(event, onCopySource)}
+            onClick={(event) => runKeyboardAction(event, onCopySource)}
+          >
             {text.copy}
           </button>
-          <button className="secondary-button" type="button" onClick={onPasteSource}>
+          <button
+            className="secondary-button"
+            type="button"
+            onPointerDown={(event) => runToolbarAction(event, onPasteSource)}
+            onClick={(event) => runKeyboardAction(event, onPasteSource)}
+          >
             {text.paste}
           </button>
-          <button className="secondary-button" type="button" onClick={onClearSource}>
+          <button
+            className="secondary-button"
+            type="button"
+            onPointerDown={(event) => runToolbarAction(event, onClearSource)}
+            onClick={(event) => runKeyboardAction(event, onClearSource)}
+          >
             {text.clear}
           </button>
         </div>
@@ -172,8 +229,8 @@ function InputEditor({
       <div className="editor-stack">
         {findVisible ? (
           <div className={replaceVisible ? 'find-popover replace-open' : 'find-popover'} role="search">
-            <div className="find-popover-row">
-              <label>
+            <div className="find-popover-main">
+              <label className="find-field">
                 <span>{text.find}</span>
                 <input
                   ref={findInputRef}
@@ -185,9 +242,52 @@ function InputEditor({
               <span className="find-match-pill">{text.matchCount(matches.length)}</span>
             </div>
 
+            <div className="find-popover-options">
+              <div className="find-option-group">
+                <button
+                  className={findOptions.caseSensitive ? 'option-chip active' : 'option-chip'}
+                  type="button"
+                  title={text.caseSensitive}
+                  aria-label={text.caseSensitive}
+                  aria-pressed={findOptions.caseSensitive}
+                  onClick={() => onFindOptionChange('caseSensitive', !findOptions.caseSensitive)}
+                >
+                  Aa
+                </button>
+                <button
+                  className={findOptions.wholeWord ? 'option-chip active' : 'option-chip'}
+                  type="button"
+                  title={text.wholeWord}
+                  aria-label={text.wholeWord}
+                  aria-pressed={findOptions.wholeWord}
+                  onClick={() => onFindOptionChange('wholeWord', !findOptions.wholeWord)}
+                >
+                  Ab
+                </button>
+                <button
+                  className={findOptions.useRegex ? 'option-chip active' : 'option-chip'}
+                  type="button"
+                  title={text.useRegex}
+                  aria-label={text.useRegex}
+                  aria-pressed={findOptions.useRegex}
+                  onClick={() => onFindOptionChange('useRegex', !findOptions.useRegex)}
+                >
+                  .*
+                </button>
+              </div>
+              <button
+                className="secondary-button compact-button"
+                type="button"
+                aria-expanded={replaceVisible}
+                onClick={() => onReplaceVisibleChange(!replaceVisible)}
+              >
+                {replaceVisible ? text.hideReplace : text.showReplace}
+              </button>
+            </div>
+
             {replaceVisible ? (
-              <div className="find-popover-row">
-                <label>
+              <div className="replace-drawer">
+                <label className="find-field">
                   <span>{text.replaceWith}</span>
                   <input
                     ref={replaceInputRef}
@@ -196,46 +296,16 @@ function InputEditor({
                     onKeyDown={handleFindInputKeyDown}
                   />
                 </label>
+                <div className="replace-actions">
+                  <button className="primary-button compact-button" type="button" onClick={onReplace}>
+                    {text.replaceOne}
+                  </button>
+                  <button className="secondary-button compact-button" type="button" onClick={onReplaceAll}>
+                    {text.replaceAll}
+                  </button>
+                </div>
               </div>
             ) : null}
-
-            <div className="find-popover-actions">
-              <button
-                className={findOptions.caseSensitive ? 'option-chip active' : 'option-chip'}
-                type="button"
-                title={text.caseSensitive}
-                onClick={() => onFindOptionChange('caseSensitive', !findOptions.caseSensitive)}
-              >
-                Aa
-              </button>
-              <button
-                className={findOptions.wholeWord ? 'option-chip active' : 'option-chip'}
-                type="button"
-                title={text.wholeWord}
-                onClick={() => onFindOptionChange('wholeWord', !findOptions.wholeWord)}
-              >
-                Ab
-              </button>
-              <button
-                className={findOptions.useRegex ? 'option-chip active' : 'option-chip'}
-                type="button"
-                title={text.useRegex}
-                onClick={() => onFindOptionChange('useRegex', !findOptions.useRegex)}
-              >
-                .*
-              </button>
-              {!replaceVisible ? (
-                <button className="secondary-button compact-button" type="button" onClick={() => onReplaceVisibleChange(true)}>
-                  {text.showReplace}
-                </button>
-              ) : null}
-              <button className="primary-button compact-button" type="button" onClick={onReplace}>
-                {text.replaceOne}
-              </button>
-              <button className="secondary-button compact-button" type="button" onClick={onReplaceAll}>
-                {text.replaceAll}
-              </button>
-            </div>
 
             <p className="find-popover-hint">{text.matchHint(searchQuery, matches.length)}</p>
           </div>

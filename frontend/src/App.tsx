@@ -132,6 +132,7 @@ function App() {
   const findInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<HTMLTextAreaElement>(null)
+  const sourceTextRef = useRef('')
   const t = messages[language]
 
   const lineCount = useMemo(() => {
@@ -207,8 +208,8 @@ function App() {
     }
 
     try {
-      const result = await replaceText(sourceText, replaceQuery, replaceWith, findOptions, replaceAllMatches)
-      setSourceText(result.output)
+      const result = await replaceText(getCurrentSourceText(), replaceQuery, replaceWith, findOptions, replaceAllMatches)
+      updateSourceText(result.output)
       setStatus('replaced')
     } catch {
       setSourceMatches([])
@@ -243,6 +244,15 @@ function App() {
     editorRef.current?.focus()
   }
 
+  function getCurrentSourceText() {
+    return editorRef.current?.value ?? sourceTextRef.current
+  }
+
+  function updateSourceText(value: string) {
+    sourceTextRef.current = value
+    setSourceText(value)
+  }
+
   function handleFindEscape() {
     if (replaceVisible) {
       setReplaceVisible(false)
@@ -255,56 +265,60 @@ function App() {
   }
 
   async function handleReverseLines() {
-    const reversedText = reverseLinesLocal(sourceText)
-    setSourceText(reversedText)
+    const reversedText = reverseLinesLocal(getCurrentSourceText())
+    updateSourceText(reversedText)
     setStatus('reversed')
   }
 
   async function handleDeduplicateLines() {
-    const result = await deduplicateLines(sourceText)
-    setSourceText(result.output)
+    const result = await deduplicateLines(getCurrentSourceText())
+    updateSourceText(result.output)
     setStatus('deduplicated')
   }
 
   async function handleSortLines() {
-    const result = await sortLinesAscending(sourceText, numericSort)
-    setSourceText(result.output)
+    const result = await sortLinesAscending(getCurrentSourceText(), numericSort)
+    updateSourceText(result.output)
     setStatus('sorted')
   }
 
   async function handleSortLinesDescending() {
-    const result = await sortLinesDescending(sourceText, numericSort)
-    setSourceText(result.output)
+    const result = await sortLinesDescending(getCurrentSourceText(), numericSort)
+    updateSourceText(result.output)
     setStatus('sorted')
   }
 
   async function handleCommaValuesToLines() {
-    const result = await commaValuesToLines(sourceText)
-    setSourceText(result.output)
+    const result = await commaValuesToLines(getCurrentSourceText())
+    updateSourceText(result.output)
     setStatus('commaToLines')
   }
 
   async function handleClearSource() {
-    setSourceText('')
+    updateSourceText('')
     setStatus('cleared')
   }
 
   async function handleCopySource() {
-    if (!sourceText) {
+    const text = getCurrentSourceText()
+
+    if (!text) {
       return
     }
 
-    await writeClipboardText(sourceText)
+    await writeClipboardText(text)
     setStatus('copied')
     setToastMessage(t.toastCopied)
   }
 
   async function handleCopyHighlights() {
+    const text = getCurrentSourceText()
+
     if (!replaceQuery || !sourceMatches.length) {
       return
     }
 
-    const highlightedText = sourceMatches.map((match) => sourceText.slice(match.start, match.end)).join('\n')
+    const highlightedText = sourceMatches.map((match) => text.slice(match.start, match.end)).join('\n')
     await writeClipboardText(highlightedText)
     setStatus('copied')
     setToastMessage(t.toastCopied)
@@ -312,7 +326,7 @@ function App() {
 
   async function handlePasteSource() {
     const text = await readClipboardText()
-    setSourceText(text)
+    updateSourceText(text)
     setStatus('pasted')
   }
 
@@ -417,7 +431,7 @@ function App() {
             replaceVisible={replaceVisible}
             numericSort={numericSort}
             text={inputText[language]}
-            onChange={setSourceText}
+            onChange={updateSourceText}
             onSearchQueryChange={setReplaceQuery}
             onReplaceWithChange={setReplaceWith}
             onFindOptionChange={updateFindOption}
@@ -500,7 +514,8 @@ const inputText = {
     caseSensitive: '区分大小写',
     wholeWord: '整字',
     useRegex: '正则',
-    showReplace: '替换',
+    showReplace: '展开替换',
+    hideReplace: '收起替换',
     replaceOne: '替换',
     replaceAll: '全部替换',
     placeholder: '请输入内容',
@@ -524,7 +539,8 @@ const inputText = {
     caseSensitive: 'Match case',
     wholeWord: 'Whole word',
     useRegex: 'Regex',
-    showReplace: 'Replace',
+    showReplace: 'Show replace',
+    hideReplace: 'Hide replace',
     replaceOne: 'Replace',
     replaceAll: 'Replace all',
     placeholder: 'Enter content',

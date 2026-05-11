@@ -305,6 +305,7 @@ h3 {
 
 .find-popover .option-chip {
   width: 32px;
+  min-width: 32px;
   justify-content: center;
   padding: 0;
 }
@@ -393,7 +394,7 @@ input:focus,
   top: 12px;
   right: 12px;
   z-index: 4;
-  width: min(520px, calc(100% - 24px));
+  width: min(560px, calc(100% - 24px));
   display: grid;
   gap: 8px;
   padding: 10px;
@@ -403,16 +404,41 @@ input:focus,
   box-shadow: 0 18px 36px rgba(17, 24, 28, 0.24);
 }
 
-.find-popover-row {
+.find-popover-main,
+.find-popover-options,
+.replace-drawer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+}
+
+.find-popover-main {
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
 }
 
-.find-popover-row label {
+.find-field {
   display: grid;
   gap: 5px;
+}
+
+.find-popover-options {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.find-option-group,
+.replace-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.replace-drawer {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
 }
 
 .find-match-pill {
@@ -427,13 +453,6 @@ input:focus,
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-}
-
-.find-popover-actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
 }
 
 .find-popover-hint {
@@ -714,7 +733,18 @@ mark {
     width: auto;
   }
 
-  .find-popover-row {
+  .find-popover-main,
+  .find-popover-options,
+  .replace-drawer {
     grid-template-columns: 1fr;
+  }
+
+  .find-popover-options {
+    align-items: stretch;
+  }
+
+  .find-option-group,
+  .replace-actions {
+    align-items: stretch;
   }
 }
