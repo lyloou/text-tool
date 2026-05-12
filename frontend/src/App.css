@@ -529,31 +529,26 @@ input:focus,
   font-size: 12px;
 }
 
-.editor-highlight-layer,
 .editor-overlay {
   position: absolute;
   inset: 0;
   margin: 0;
-  padding: 18px;
-  overflow: auto;
+  padding: 18px 34px 34px 18px;
   font-family: SF Mono, Menlo, Consolas, ui-monospace, monospace;
   font-size: 14px;
   line-height: 1.65;
   letter-spacing: 0;
 }
 
-.editor-highlight-layer.show-line-numbers,
 .editor-overlay.show-line-numbers {
   padding-left: 62px;
 }
 
-.editor-highlight-layer.soft-wrap,
 .editor-overlay.soft-wrap {
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.editor-highlight-layer.no-soft-wrap,
 .editor-overlay.no-soft-wrap {
   white-space: pre;
   word-break: normal;
@@ -582,28 +577,16 @@ input:focus,
   min-width: 0;
 }
 
-.editor-highlight-layer {
-  pointer-events: none;
-  color: var(--editor-text);
+.editor-overlay {
+  overflow: auto;
+  resize: none;
+  border: 0;
+  border-radius: 0;
   background:
     linear-gradient(90deg, var(--editor-line) 1px, transparent 1px),
     var(--editor);
   background-size: 72px 100%;
-}
-
-.editor-highlight-text {
-  margin: 0;
-  min-height: 100%;
-  white-space: inherit;
-  word-break: inherit;
-}
-
-.editor-overlay {
-  resize: none;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: transparent;
+  color: var(--editor-text);
   caret-color: var(--editor-caret);
   box-shadow: none;
 }

@@ -98,18 +98,10 @@ function InputEditor({
   onSortLinesDescending,
   onCommaValuesToLines,
 }: InputEditorProps) {
-  const highlightRef = useRef<HTMLDivElement>(null)
   const lineNumbersRef = useRef<HTMLDivElement>(null)
   const lineNumbers = value.split('\n').map((_, index) => index + 1)
 
   function handleScroll(event: React.UIEvent<HTMLTextAreaElement>) {
-    if (!highlightRef.current) {
-      return
-    }
-
-    highlightRef.current.scrollTop = event.currentTarget.scrollTop
-    highlightRef.current.scrollLeft = event.currentTarget.scrollLeft
-
     if (lineNumbersRef.current) {
       lineNumbersRef.current.scrollTop = event.currentTarget.scrollTop
     }
@@ -321,25 +313,16 @@ function InputEditor({
           </div>
         ) : null}
         {showLineNumbers ? (
-          <div ref={lineNumbersRef} className="editor-line-numbers" aria-hidden="true">
+          <div
+            ref={lineNumbersRef}
+            className={['editor-line-numbers', softWrap ? 'soft-wrap' : 'no-soft-wrap'].join(' ')}
+            aria-hidden="true"
+          >
             {lineNumbers.map((lineNumber) => (
               <span key={lineNumber}>{lineNumber}</span>
             ))}
           </div>
         ) : null}
-        <div
-          ref={highlightRef}
-          className={[
-            'editor-highlight-layer',
-            showLineNumbers ? 'show-line-numbers' : '',
-            softWrap ? 'soft-wrap' : 'no-soft-wrap',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-          aria-hidden="true"
-        >
-          <pre className="editor-highlight-text">{renderHighlightedText(value, searchQuery, matches)}</pre>
-        </div>
         <textarea
           ref={editorRef}
           className={[
@@ -359,40 +342,6 @@ function InputEditor({
         />
       </div>
     </section>
-  )
-}
-
-function renderHighlightedText(value: string, searchQuery: string, matches: SearchMatch[]) {
-  if (!value) {
-    return ' '
-  }
-
-  if (!searchQuery || !matches.length) {
-    return <span>{value}</span>
-  }
-
-  const parts: Array<{ text: string; highlighted: boolean }> = []
-  let cursor = 0
-
-  matches.forEach((match) => {
-    if (cursor < match.start) {
-      parts.push({ text: value.slice(cursor, match.start), highlighted: false })
-    }
-
-    parts.push({ text: value.slice(match.start, match.end), highlighted: true })
-    cursor = match.end
-  })
-
-  if (cursor < value.length) {
-    parts.push({ text: value.slice(cursor), highlighted: false })
-  }
-
-  return parts.map((part, index) =>
-    part.highlighted ? (
-      <mark key={`${part.text}-${index}`}>{part.text}</mark>
-    ) : (
-      <span key={`${part.text}-${index}`}>{part.text}</span>
-    ),
   )
 }
 
