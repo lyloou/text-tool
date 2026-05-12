@@ -8,14 +8,19 @@ import {
   commaValuesToLines,
   deduplicateLines,
   defaultPreferences,
+  findMatches,
   loadPreferences,
   readClipboardText,
+  replaceAll,
+  replaceFirst,
   savePreferences,
   sortLinesAscending,
   sortLinesDescending,
   writeClipboardText,
+  type FindOptions,
   type Preferences,
   type ResultOutput,
+  type SearchMatch,
 } from './services/tauriApi'
 
 type Language = Preferences['appearance']['language']
@@ -30,11 +35,35 @@ type StatusKey =
   | 'cleared'
   | 'pasted'
   | 'copied'
+  | 'replaced'
+
+type FindPanelState = {
+  expanded: boolean
+  query: string
+  replaceWith: string
+  caseSensitive: boolean
+  wholeWord: boolean
+  useRegex: boolean
+  matches: SearchMatch[]
+  activeMatchIndex: number
+  error: string
+}
 
 const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 const isSettingsWindow =
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('window') === 'settings'
+const defaultFindPanel: FindPanelState = {
+  expanded: false,
+  query: '',
+  replaceWith: '',
+  caseSensitive: false,
+  wholeWord: false,
+  useRegex: false,
+  matches: [],
+  activeMatchIndex: -1,
+  error: '',
+}
 
 const messages = {
   zh: {
@@ -74,6 +103,7 @@ const messages = {
       cleared: '已清除原始内容',
       pasted: '已从剪贴板粘贴',
       copied: '已复制',
+      replaced: '已替换',
     },
   },
   en: {
@@ -113,6 +143,7 @@ const messages = {
       cleared: 'Cleared source text',
       pasted: 'Pasted from clipboard',
       copied: 'Copied',
+      replaced: 'Replaced',
     },
   },
 } satisfies Record<Language, object>
@@ -130,6 +161,7 @@ function App() {
   })
   const [numericSort, setNumericSort] = useState(false)
   const [resultOutputs, setResultOutputs] = useState<ResultOutput[]>([])
+  const [findPanel, setFindPanel] = useState<FindPanelState>(defaultFindPanel)
   const [status, setStatus] = useState<StatusKey>('ready')
   const [toastMessage, setToastMessage] = useState('')
   const editorRef = useRef<HTMLTextAreaElement>(null)
@@ -242,6 +274,75 @@ function App() {
   }, [toastMessage])
 
   useEffect(() => {
+    if (!findPanel.expanded) {
+      return
+    }
+
+    let active = true
+    const options = getFindOptions(findPanel)
+
+    async function updateMatches() {
+      try {
+        const result = await findMatches(sourceText, findPanel.query, options)
+
+        if (!active) {
+          return
+        }
+
+        const activeMatchIndex = getNextActiveMatchIndex(result.matches, findPanel.activeMatchIndex)
+        setFindPanel((current) => ({
+          ...current,
+          matches: result.matches,
+          activeMatchIndex,
+          error: '',
+        }))
+
+        if (activeMatchIndex >= 0) {
+          selectMatch(result.matches[activeMatchIndex], false)
+        }
+      } catch (error) {
+        if (active) {
+          setFindPanel((current) => ({
+            ...current,
+            matches: [],
+            activeMatchIndex: -1,
+            error: error instanceof Error ? error.message : String(error),
+          }))
+        }
+      }
+    }
+
+    void updateMatches()
+
+    return () => {
+      active = false
+    }
+  }, [
+    sourceText,
+    findPanel.expanded,
+    findPanel.query,
+    findPanel.caseSensitive,
+    findPanel.wholeWord,
+    findPanel.useRegex,
+  ])
+
+  useEffect(() => {
+    if (!findPanel.expanded) {
+      return
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeFindPanel()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [findPanel.expanded])
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (!event.metaKey || event.shiftKey || event.ctrlKey) {
         return
@@ -259,6 +360,10 @@ function App() {
         return
       }
 
+      if (event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        openFindPanel()
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -330,6 +435,121 @@ function App() {
   function updateSourceText(value: string) {
     sourceTextRef.current = value
     setSourceText(value)
+  }
+
+  function getSelectedText() {
+    const editor = editorRef.current
+
+    if (!editor || editor.selectionStart === editor.selectionEnd) {
+      return ''
+    }
+
+    return editor.value.slice(editor.selectionStart, editor.selectionEnd)
+  }
+
+  function openFindPanel() {
+    const selectedText = getSelectedText()
+
+    setFindPanel((current) => ({
+      ...current,
+      expanded: true,
+      query: selectedText || current.query,
+      error: '',
+    }))
+  }
+
+  function closeFindPanel() {
+    setFindPanel((current) => ({
+      ...current,
+      expanded: false,
+      matches: [],
+      activeMatchIndex: -1,
+      error: '',
+    }))
+    focusEditor()
+  }
+
+  function updateFindPanel(values: Partial<FindPanelState>) {
+    setFindPanel((current) => {
+      const shouldResetMatches =
+        'query' in values || 'caseSensitive' in values || 'wholeWord' in values || 'useRegex' in values
+
+      return {
+        ...current,
+        ...values,
+        activeMatchIndex: shouldResetMatches ? -1 : values.activeMatchIndex ?? current.activeMatchIndex,
+        error: shouldResetMatches ? '' : values.error ?? current.error,
+      }
+    })
+  }
+
+  function selectMatch(match: SearchMatch, shouldFocus = true) {
+    const editor = editorRef.current
+
+    if (!editor) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      if (shouldFocus) {
+        editor.focus()
+      }
+
+      editor.setSelectionRange(match.start, match.end)
+      scrollEditorToMatch(editor, match.start)
+    })
+  }
+
+  function selectRelativeMatch(direction: 1 | -1) {
+    if (!findPanel.matches.length) {
+      return
+    }
+
+    const nextIndex =
+      findPanel.activeMatchIndex < 0
+        ? direction > 0
+          ? 0
+          : findPanel.matches.length - 1
+        : (findPanel.activeMatchIndex + direction + findPanel.matches.length) % findPanel.matches.length
+
+    setFindPanel((current) => ({
+      ...current,
+      activeMatchIndex: nextIndex,
+    }))
+    selectMatch(findPanel.matches[nextIndex])
+  }
+
+  async function handleReplaceCurrent() {
+    if (!findPanel.query) {
+      return
+    }
+
+    try {
+      const source = getCurrentSourceText()
+      const activeMatch = findPanel.matches[findPanel.activeMatchIndex]
+      const input = activeMatch ? source.slice(activeMatch.start) : source
+      const result = await replaceFirst(input, findPanel.query, findPanel.replaceWith, getFindOptions(findPanel))
+      const nextText = activeMatch ? source.slice(0, activeMatch.start) + result.output : result.output
+
+      updateSourceText(nextText)
+      setStatus('replaced')
+    } catch (error) {
+      updateFindPanel({ error: error instanceof Error ? error.message : String(error) })
+    }
+  }
+
+  async function handleReplaceAll() {
+    if (!findPanel.query) {
+      return
+    }
+
+    try {
+      const result = await replaceAll(getCurrentSourceText(), findPanel.query, findPanel.replaceWith, getFindOptions(findPanel))
+      updateSourceText(result.output)
+      setStatus('replaced')
+    } catch (error) {
+      updateFindPanel({ error: error instanceof Error ? error.message : String(error) })
+    }
   }
 
   async function handleReverseLines() {
@@ -429,8 +649,16 @@ function App() {
             numericSort={numericSort}
             showLineNumbers={preferences.editor.showLineNumbers}
             softWrap={preferences.editor.softWrap}
+            findPanel={findPanel}
             text={inputText[language]}
             onChange={updateSourceText}
+            onOpenFind={openFindPanel}
+            onCloseFind={closeFindPanel}
+            onFindPanelChange={updateFindPanel}
+            onFindPrevious={() => selectRelativeMatch(-1)}
+            onFindNext={() => selectRelativeMatch(1)}
+            onReplaceCurrent={() => void handleReplaceCurrent()}
+            onReplaceAll={() => void handleReplaceAll()}
             onNumericSortChange={setNumericSort}
             onCopySource={() => void handleCopySource()}
             onClearSource={() => void handleClearSource()}
@@ -623,6 +851,19 @@ const inputText = {
     numericSort: '数字排序',
     commaToLines: '逗号转行',
     placeholder: '请输入内容',
+    find: '查找',
+    replace: '替换',
+    openFind: '查找替换',
+    closeFind: '关闭查找',
+    previousMatch: '上一个',
+    nextMatch: '下一个',
+    replaceCurrent: '替换',
+    replaceAll: '全部替换',
+    caseSensitive: '区分大小写',
+    wholeWord: '整词匹配',
+    regex: '正则表达式',
+    noResults: '无结果',
+    resultCount: (active: number, total: number) => `${active}/${total}`,
   },
   en: {
     copy: 'Copy',
@@ -636,6 +877,19 @@ const inputText = {
     numericSort: 'Numeric sort',
     commaToLines: 'Comma to lines',
     placeholder: 'Enter content',
+    find: 'Find',
+    replace: 'Replace',
+    openFind: 'Find and replace',
+    closeFind: 'Close find',
+    previousMatch: 'Previous match',
+    nextMatch: 'Next match',
+    replaceCurrent: 'Replace',
+    replaceAll: 'Replace all',
+    caseSensitive: 'Case sensitive',
+    wholeWord: 'Whole word',
+    regex: 'Regular expression',
+    noResults: 'No results',
+    resultCount: (active: number, total: number) => `${active}/${total}`,
   },
 }
 
@@ -664,6 +918,37 @@ const resultText = {
 
 function reverseLinesLocal(value: string) {
   return value.split('\n').reverse().join('\n')
+}
+
+function getFindOptions(state: Pick<FindPanelState, 'caseSensitive' | 'wholeWord' | 'useRegex'>): FindOptions {
+  return {
+    caseSensitive: state.caseSensitive,
+    wholeWord: state.wholeWord,
+    useRegex: state.useRegex,
+  }
+}
+
+function getNextActiveMatchIndex(matches: SearchMatch[], currentIndex: number) {
+  if (!matches.length) {
+    return -1
+  }
+
+  if (currentIndex < 0) {
+    return 0
+  }
+
+  return Math.min(currentIndex, matches.length - 1)
+}
+
+function scrollEditorToMatch(editor: HTMLTextAreaElement, matchStart: number) {
+  const textBeforeMatch = editor.value.slice(0, matchStart)
+  const lineIndex = textBeforeMatch.split('\n').length - 1
+  const styles = window.getComputedStyle(editor)
+  const lineHeight = Number.parseFloat(styles.lineHeight) || 23
+  const paddingTop = Number.parseFloat(styles.paddingTop) || 0
+  const targetTop = lineIndex * lineHeight + paddingTop - editor.clientHeight / 2 + lineHeight
+
+  editor.scrollTop = Math.max(0, targetTop)
 }
 
 export default App

@@ -5,14 +5,14 @@
 }
 
 .app-shell {
-  --page: #e8ece8;
-  --panel: #f7f7f2;
-  --panel-strong: #eef0e9;
-  --panel-soft: #fbfbf6;
+  --page: #f1f2ee;
+  --panel: #f8f8f3;
+  --panel-strong: #eeefe9;
+  --panel-soft: #fcfcf7;
   --text: #172027;
   --muted: #66706f;
-  --line: #b9c2ba;
-  --line-strong: #8e9a94;
+  --line: #d3d8d0;
+  --line-strong: #aeb8af;
   --accent: #0f766d;
   --accent-strong: #09584f;
   --accent-soft: rgba(15, 118, 109, 0.13);
@@ -27,14 +27,12 @@
   height: 100vh;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 10px 16px 16px;
+  padding: 8px 14px 12px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: 8px;
   color: var(--text);
-  background:
-    radial-gradient(circle at 18% 0%, rgba(15, 118, 109, 0.12), transparent 30%),
-    var(--page);
+  background: var(--page);
 }
 
 .app-shell[data-theme='dark'] {
@@ -59,7 +57,7 @@
 }
 
 .app-header {
-  min-height: 32px;
+  min-height: 26px;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -125,11 +123,11 @@
 }
 
 .status-bar-group span {
-  border: 1px solid var(--line);
-  background: var(--panel-soft);
+  border: 0;
+  background: transparent;
   color: var(--muted);
-  border-radius: 999px;
-  padding: 6px 10px;
+  border-radius: 0;
+  padding: 0;
   font-size: 12px;
   line-height: 1;
 }
@@ -177,7 +175,7 @@ h3 {
 }
 
 h2 {
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .settings-panel h2,
@@ -249,8 +247,8 @@ h3 {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
-  gap: 12px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(330px, 0.75fr);
+  gap: 10px;
   min-height: 0;
 }
 
@@ -261,10 +259,10 @@ h3 {
 .workbench-column,
 .result-panel {
   min-height: 0;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
-  box-shadow: 0 18px 38px rgba(17, 24, 28, 0.15);
+  box-shadow: none;
 }
 
 .workbench-column {
@@ -283,11 +281,15 @@ h3 {
 
 .result-card {
   display: grid;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel-soft);
+  gap: 8px;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.result-card + .result-card {
+  border-top: 1px solid var(--line);
 }
 
 .source-action-row,
@@ -304,7 +306,7 @@ h3 {
 .line-action-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -312,22 +314,29 @@ h3 {
 .line-transform-group {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .line-action-button {
   appearance: none;
-  min-height: 32px;
-  padding: 0 11px;
+  min-height: 28px;
+  padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--button);
   color: var(--button-text);
   font: inherit;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.icon-action-button {
+  width: 30px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
 }
 
 .sort-option-toggle {
@@ -411,30 +420,30 @@ input:focus,
 }
 
 .editor-panel {
-  padding: 12px;
+  padding: 8px;
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .editor-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel-strong);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .editor-toolbar .secondary-button,
 .editor-toolbar .line-action-button,
 .editor-toolbar .sort-option-toggle {
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: 28px;
+  padding: 0 9px;
   font-size: 12px;
   font-weight: 700;
 }
@@ -444,16 +453,106 @@ input:focus,
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   background: var(--editor);
+}
+
+.find-replace-panel {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  z-index: 4;
+  width: min(560px, calc(100% - 24px));
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--panel-soft) 96%, transparent);
+  box-shadow: 0 16px 36px rgba(17, 24, 28, 0.18);
+}
+
+.app-shell[data-theme='dark'] .find-replace-panel {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+}
+
+.find-row,
+.find-options {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.find-input {
+  min-width: 0;
+  height: 30px;
+  padding: 5px 8px;
+  border-color: var(--line);
+  background: var(--editor);
+  font-size: 13px;
+}
+
+.find-match-count {
+  min-width: 72px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.find-icon-button,
+.find-text-button,
+.find-option {
+  appearance: none;
+  flex: 0 0 auto;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--button);
+  color: var(--button-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.find-icon-button {
+  width: 28px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.find-text-button {
+  padding: 0 9px;
+}
+
+.find-text-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.find-options {
+  justify-content: flex-end;
+}
+
+.find-option {
+  min-width: 30px;
+  padding: 0 7px;
+}
+
+.find-option.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .editor-overlay {
   position: absolute;
   inset: 0;
   margin: 0;
-  padding: 18px 34px 34px 18px;
+  padding: 16px 24px 28px 16px;
   font-family: SF Mono, Menlo, Consolas, ui-monospace, monospace;
   font-size: 14px;
   line-height: 1.65;
@@ -509,17 +608,17 @@ input:focus,
 }
 
 .result-panel {
-  padding: 12px;
+  padding: 8px 10px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
+  gap: 4px;
 }
 
 .result-header {
   display: grid;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 0;
 }
 
 .result-title-row {
@@ -531,19 +630,19 @@ input:focus,
 
 .result-actions {
   align-items: stretch;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel-strong);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 0 10px;
-  border-radius: 5px;
+  gap: 7px;
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 4px;
   background: var(--button);
   border: 1px solid var(--line);
   color: var(--button-text);
@@ -558,14 +657,14 @@ input:focus,
 
 .result-cards {
   display: grid;
-  gap: 10px;
+  gap: 0;
   min-height: 0;
   overflow: auto;
   align-content: start;
 }
 
 .result-card {
-  background: var(--panel-soft);
+  background: transparent;
 }
 
 .result-card-header {
@@ -573,11 +672,11 @@ input:focus,
 }
 
 .result-surface {
-  min-height: 42px;
+  min-height: 38px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 10px 12px;
+  border-radius: 4px;
+  padding: 8px 10px;
   background: var(--result);
 }
 
@@ -603,9 +702,9 @@ input:focus,
 .primary-button,
 .secondary-button {
   appearance: none;
-  border-radius: 5px;
-  min-height: 36px;
-  padding: 0 12px;
+  border-radius: 4px;
+  min-height: 30px;
+  padding: 0 10px;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -645,7 +744,7 @@ input:focus,
 
 .status-bar {
   justify-content: space-between;
-  min-height: 28px;
+  min-height: 20px;
 }
 
 .toast {
@@ -717,6 +816,21 @@ input:focus,
 
   .editor-stack {
     min-height: 320px;
+  }
+
+  .find-replace-panel {
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  .find-row {
+    flex-wrap: wrap;
+  }
+
+  .find-input,
+  .find-text-button {
+    flex: 1 1 100%;
   }
 
 }

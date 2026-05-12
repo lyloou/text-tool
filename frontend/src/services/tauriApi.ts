@@ -8,6 +8,17 @@ export type ResultOutput = {
   output: string
 }
 
+export type FindOptions = {
+  caseSensitive: boolean
+  wholeWord: boolean
+  useRegex: boolean
+}
+
+export type SearchMatch = {
+  start: number
+  end: number
+}
+
 export type Preferences = {
   editor: {
     showLineNumbers: boolean
@@ -123,6 +134,50 @@ export async function commaValuesToLines(input: string) {
   return invoke<{ output: string }>('comma_values_to_lines_command', {
     request: {
       input,
+    },
+  })
+}
+
+export async function findMatches(input: string, query: string, options: FindOptions) {
+  if (!isTauriRuntime) {
+    return { matches: findMatchesLocal(input, query, options) }
+  }
+
+  return invoke<{ matches: SearchMatch[] }>('find_matches_command', {
+    request: {
+      input,
+      query,
+      options,
+    },
+  })
+}
+
+export async function replaceFirst(input: string, find: string, replaceWith: string, options: FindOptions) {
+  if (!isTauriRuntime) {
+    return { output: replaceFirstLocal(input, find, replaceWith, options) }
+  }
+
+  return invoke<{ output: string }>('replace_first_command', {
+    request: {
+      input,
+      find,
+      replaceWith,
+      options,
+    },
+  })
+}
+
+export async function replaceAll(input: string, find: string, replaceWith: string, options: FindOptions) {
+  if (!isTauriRuntime) {
+    return { output: replaceAllLocal(input, find, replaceWith, options) }
+  }
+
+  return invoke<{ output: string }>('replace_all_command', {
+    request: {
+      input,
+      find,
+      replaceWith,
+      options,
     },
   })
 }
@@ -267,4 +322,53 @@ function stripWrappingQuotes(value: string) {
   }
 
   return value
+}
+
+function findMatchesLocal(input: string, query: string, options: FindOptions): SearchMatch[] {
+  if (!query) {
+    return []
+  }
+
+  const regex = buildFindRegexWithFallback(query, options)
+  return Array.from(input.matchAll(regex), (match) => ({
+    start: match.index,
+    end: match.index + match[0].length,
+  }))
+}
+
+function replaceFirstLocal(input: string, find: string, replaceWith: string, options: FindOptions) {
+  if (!find) {
+    return input
+  }
+
+  return input.replace(buildFindRegexWithFallback(find, options), replaceWith)
+}
+
+function replaceAllLocal(input: string, find: string, replaceWith: string, options: FindOptions) {
+  if (!find) {
+    return input
+  }
+
+  return input.replace(buildFindRegexWithFallback(find, options), replaceWith)
+}
+
+function buildFindRegexWithFallback(query: string, options: FindOptions) {
+  try {
+    return buildFindRegex(query, options)
+  } catch {
+    return buildFindRegex(query, {
+      ...options,
+      useRegex: false,
+    })
+  }
+}
+
+function buildFindRegex(query: string, options: FindOptions) {
+  const source = options.useRegex ? query : escapeRegex(query)
+  const pattern = options.wholeWord ? `\\b(?:${source})\\b` : source
+  return new RegExp(pattern, options.caseSensitive ? 'g' : 'gi')
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
