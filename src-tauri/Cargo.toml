@@ -12,3 +12,4 @@ serde_json = "1"
 tauri = { version = "2", features = [] }
 tauri-plugin-clipboard-manager = "2"
 text_core = { path = "../crates/text_core" }
+toml = "0.8"

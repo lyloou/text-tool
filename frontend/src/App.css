@@ -82,6 +82,73 @@
   justify-content: flex-end;
 }
 
+.settings-menu {
+  position: relative;
+}
+
+.settings-button {
+  appearance: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.settings-button.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.settings-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 8;
+  width: 260px;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  box-shadow: 0 18px 38px rgba(17, 24, 28, 0.22);
+}
+
+.settings-group {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-group + .settings-group {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-group h3 {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-row > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .status-bar-group span,
 .match-count {
   border: 1px solid var(--line);
@@ -128,7 +195,8 @@
 
 .app-shell[data-theme='dark'] .segmented-control button.active,
 .app-shell[data-theme='dark'] .language-switch button.active,
-.app-shell[data-theme='dark'] .result-visibility-switch button.active {
+.app-shell[data-theme='dark'] .result-visibility-switch button.active,
+.app-shell[data-theme='dark'] .settings-button.active {
   color: #06100e;
 }
 
@@ -472,8 +540,46 @@ input:focus,
   font-size: 14px;
   line-height: 1.65;
   letter-spacing: 0;
+}
+
+.editor-highlight-layer.show-line-numbers,
+.editor-overlay.show-line-numbers {
+  padding-left: 62px;
+}
+
+.editor-highlight-layer.soft-wrap,
+.editor-overlay.soft-wrap {
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.editor-highlight-layer.no-soft-wrap,
+.editor-overlay.no-soft-wrap {
+  white-space: pre;
+  word-break: normal;
+}
+
+.editor-line-numbers {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 2;
+  width: 44px;
+  padding: 18px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--editor) 94%, var(--panel));
+  color: var(--muted);
+  font-family: SF Mono, Menlo, Consolas, ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.925;
+  text-align: right;
+  user-select: none;
+}
+
+.editor-line-numbers span {
+  display: block;
+  min-width: 0;
 }
 
 .editor-highlight-layer {
@@ -488,8 +594,8 @@ input:focus,
 .editor-highlight-text {
   margin: 0;
   min-height: 100%;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: inherit;
+  word-break: inherit;
 }
 
 .editor-overlay {

@@ -6,19 +6,23 @@ import {
   convertAllFormats,
   commaValuesToLines,
   deduplicateLines,
+  defaultPreferences,
+  loadPreferences,
   readClipboardText,
   replaceText,
+  savePreferences,
   searchMatches,
   sortLinesAscending,
   sortLinesDescending,
   writeClipboardText,
   type FindOptions,
+  type Preferences,
   type ResultOutput,
   type SearchMatch,
 } from './services/tauriApi'
 
-type Language = 'zh' | 'en'
-type Theme = 'light' | 'dark'
+type Language = Preferences['appearance']['language']
+type Theme = Preferences['appearance']['theme']
 type StatusKey =
   | 'ready'
   | 'converted'
@@ -38,6 +42,11 @@ const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in
 
 const messages = {
   zh: {
+    settings: '设置',
+    editorSettings: '编辑器',
+    appearanceSettings: '外观',
+    showLineNumbers: '显示行号',
+    softWrap: '自动换行',
     statusLabel: '当前文档状态',
     lines: '行',
     matches: '匹配',
@@ -71,6 +80,11 @@ const messages = {
     },
   },
   en: {
+    settings: 'Settings',
+    editorSettings: 'Editor',
+    appearanceSettings: 'Appearance',
+    showLineNumbers: 'Line numbers',
+    softWrap: 'Soft wrap',
     statusLabel: 'Current document status',
     lines: 'lines',
     matches: 'matches',
@@ -106,11 +120,11 @@ const messages = {
 } satisfies Record<Language, object>
 
 function App() {
-  const [language, setLanguage] = useState<Language>('zh')
-  const [theme, setTheme] = useState<Theme>('light')
   const [sourceText, setSourceText] = useState('')
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [wrapWithParentheses, setWrapWithParentheses] = useState(false)
+  const [preferences, setPreferences] = useState(defaultPreferences)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [resultPanelExpanded, setResultPanelExpanded] = useState(() => {
     const saved = window.localStorage.getItem(resultPanelStorageKey)
     return saved === null ? true : saved === 'true'
@@ -133,6 +147,8 @@ function App() {
   const replaceInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const sourceTextRef = useRef('')
+  const language = preferences.appearance.language
+  const theme = preferences.appearance.theme
   const t = messages[language]
 
   const lineCount = useMemo(() => {
@@ -156,6 +172,24 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem(resultPanelStorageKey, String(resultPanelExpanded))
   }, [resultPanelExpanded])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadSavedPreferences() {
+      const savedPreferences = await loadPreferences()
+
+      if (active) {
+        setPreferences(savedPreferences)
+      }
+    }
+
+    void loadSavedPreferences()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!toastMessage) {
@@ -238,6 +272,36 @@ function App() {
       ...current,
       [option]: value,
     }))
+  }
+
+  function updateEditorPreference(option: keyof typeof preferences.editor, value: boolean) {
+    setPreferences((current) => {
+      const nextPreferences = {
+        ...current,
+        editor: {
+          ...current.editor,
+          [option]: value,
+        },
+      }
+
+      void savePreferences(nextPreferences).catch(() => undefined)
+      return nextPreferences
+    })
+  }
+
+  function updateAppearancePreference(option: keyof typeof preferences.appearance, value: Language | Theme) {
+    setPreferences((current) => {
+      const nextPreferences = {
+        ...current,
+        appearance: {
+          ...current.appearance,
+          [option]: value,
+        },
+      }
+
+      void savePreferences(nextPreferences).catch(() => undefined)
+      return nextPreferences
+    })
   }
 
   function focusEditor() {
@@ -353,46 +417,6 @@ function App() {
     <main className="app-shell" data-theme={theme}>
       <header className="app-header" onPointerDown={handleWindowDrag}>
         <div className="header-metrics" aria-label={t.statusLabel}>
-          <div className="segmented-control" aria-label={t.theme}>
-            <button
-              className={theme === 'light' ? 'active' : ''}
-              type="button"
-              title={t.lightTheme}
-              aria-label={t.lightTheme}
-              onClick={() => setTheme('light')}
-            >
-              ☀
-            </button>
-            <button
-              className={theme === 'dark' ? 'active' : ''}
-              type="button"
-              title={t.darkTheme}
-              aria-label={t.darkTheme}
-              onClick={() => setTheme('dark')}
-            >
-              ◐
-            </button>
-          </div>
-          <div className="language-switch" aria-label={t.language}>
-            <button
-              className={language === 'zh' ? 'active' : ''}
-              type="button"
-              title="中文"
-              aria-label="中文"
-              onClick={() => setLanguage('zh')}
-            >
-              中
-            </button>
-            <button
-              className={language === 'en' ? 'active' : ''}
-              type="button"
-              title="English"
-              aria-label="English"
-              onClick={() => setLanguage('en')}
-            >
-              EN
-            </button>
-          </div>
           <div className="result-visibility-switch" aria-label={resultText[language].visibility}>
             <button
               className={resultPanelExpanded ? 'active' : ''}
@@ -413,6 +437,96 @@ function App() {
               □
             </button>
           </div>
+          <div className="settings-menu">
+            <button
+              className={settingsOpen ? 'settings-button active' : 'settings-button'}
+              type="button"
+              title={t.settings}
+              aria-label={t.settings}
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen(!settingsOpen)}
+            >
+              ⚙
+            </button>
+            {settingsOpen ? (
+              <div className="settings-popover">
+                <div className="settings-group">
+                  <h3>{t.editorSettings}</h3>
+                  <button
+                    className={preferences.editor.showLineNumbers ? 'sort-option-toggle active' : 'sort-option-toggle'}
+                    type="button"
+                    aria-pressed={preferences.editor.showLineNumbers}
+                    onClick={() => updateEditorPreference('showLineNumbers', !preferences.editor.showLineNumbers)}
+                  >
+                    <span className="toggle-track" aria-hidden="true">
+                      <span className="toggle-thumb" />
+                    </span>
+                    <span>{t.showLineNumbers}</span>
+                  </button>
+                  <button
+                    className={preferences.editor.softWrap ? 'sort-option-toggle active' : 'sort-option-toggle'}
+                    type="button"
+                    aria-pressed={preferences.editor.softWrap}
+                    onClick={() => updateEditorPreference('softWrap', !preferences.editor.softWrap)}
+                  >
+                    <span className="toggle-track" aria-hidden="true">
+                      <span className="toggle-thumb" />
+                    </span>
+                    <span>{t.softWrap}</span>
+                  </button>
+                </div>
+                <div className="settings-group">
+                  <h3>{t.appearanceSettings}</h3>
+                  <div className="settings-row">
+                    <span>{t.theme}</span>
+                    <div className="segmented-control" aria-label={t.theme}>
+                      <button
+                        className={theme === 'light' ? 'active' : ''}
+                        type="button"
+                        title={t.lightTheme}
+                        aria-label={t.lightTheme}
+                        onClick={() => updateAppearancePreference('theme', 'light')}
+                      >
+                        ☀
+                      </button>
+                      <button
+                        className={theme === 'dark' ? 'active' : ''}
+                        type="button"
+                        title={t.darkTheme}
+                        aria-label={t.darkTheme}
+                        onClick={() => updateAppearancePreference('theme', 'dark')}
+                      >
+                        ◐
+                      </button>
+                    </div>
+                  </div>
+                  <div className="settings-row">
+                    <span>{t.language}</span>
+                    <div className="language-switch" aria-label={t.language}>
+                      <button
+                        className={language === 'zh' ? 'active' : ''}
+                        type="button"
+                        title="中文"
+                        aria-label="中文"
+                        onClick={() => updateAppearancePreference('language', 'zh')}
+                      >
+                        中
+                      </button>
+                      <button
+                        className={language === 'en' ? 'active' : ''}
+                        type="button"
+                        title="English"
+                        aria-label="English"
+                        onClick={() => updateAppearancePreference('language', 'en')}
+                      >
+                        EN
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -430,6 +544,8 @@ function App() {
             findVisible={findVisible}
             replaceVisible={replaceVisible}
             numericSort={numericSort}
+            showLineNumbers={preferences.editor.showLineNumbers}
+            softWrap={preferences.editor.softWrap}
             text={inputText[language]}
             onChange={updateSourceText}
             onSearchQueryChange={setReplaceQuery}

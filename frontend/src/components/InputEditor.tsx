@@ -13,6 +13,8 @@ type InputEditorProps = {
   findVisible: boolean
   replaceVisible: boolean
   numericSort: boolean
+  showLineNumbers: boolean
+  softWrap: boolean
   text: {
     copy: string
     copyHighlights: string
@@ -72,6 +74,8 @@ function InputEditor({
   findVisible,
   replaceVisible,
   numericSort,
+  showLineNumbers,
+  softWrap,
   text,
   onChange,
   onSearchQueryChange,
@@ -95,6 +99,8 @@ function InputEditor({
   onCommaValuesToLines,
 }: InputEditorProps) {
   const highlightRef = useRef<HTMLDivElement>(null)
+  const lineNumbersRef = useRef<HTMLDivElement>(null)
+  const lineNumbers = value.split('\n').map((_, index) => index + 1)
 
   function handleScroll(event: React.UIEvent<HTMLTextAreaElement>) {
     if (!highlightRef.current) {
@@ -103,6 +109,10 @@ function InputEditor({
 
     highlightRef.current.scrollTop = event.currentTarget.scrollTop
     highlightRef.current.scrollLeft = event.currentTarget.scrollLeft
+
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = event.currentTarget.scrollTop
+    }
   }
 
   function handleFindInputKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -310,17 +320,42 @@ function InputEditor({
             <p className="find-popover-hint">{text.matchHint(searchQuery, matches.length)}</p>
           </div>
         ) : null}
-        <div ref={highlightRef} className="editor-highlight-layer" aria-hidden="true">
+        {showLineNumbers ? (
+          <div ref={lineNumbersRef} className="editor-line-numbers" aria-hidden="true">
+            {lineNumbers.map((lineNumber) => (
+              <span key={lineNumber}>{lineNumber}</span>
+            ))}
+          </div>
+        ) : null}
+        <div
+          ref={highlightRef}
+          className={[
+            'editor-highlight-layer',
+            showLineNumbers ? 'show-line-numbers' : '',
+            softWrap ? 'soft-wrap' : 'no-soft-wrap',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-hidden="true"
+        >
           <pre className="editor-highlight-text">{renderHighlightedText(value, searchQuery, matches)}</pre>
         </div>
         <textarea
           ref={editorRef}
-          className="editor editor-overlay"
+          className={[
+            'editor',
+            'editor-overlay',
+            showLineNumbers ? 'show-line-numbers' : '',
+            softWrap ? 'soft-wrap' : 'no-soft-wrap',
+          ]
+            .filter(Boolean)
+            .join(' ')}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onScroll={handleScroll}
           placeholder={text.placeholder}
           spellCheck={false}
+          wrap={softWrap ? 'soft' : 'off'}
         />
       </div>
     </section>

@@ -19,6 +19,28 @@ export type ResultOutput = {
   output: string
 }
 
+export type Preferences = {
+  editor: {
+    showLineNumbers: boolean
+    softWrap: boolean
+  }
+  appearance: {
+    theme: 'light' | 'dark'
+    language: 'zh' | 'en'
+  }
+}
+
+export const defaultPreferences: Preferences = {
+  editor: {
+    showLineNumbers: true,
+    softWrap: true,
+  },
+  appearance: {
+    theme: 'light',
+    language: 'zh',
+  },
+}
+
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
 const resultFormats: Array<{ format: ConvertMode; label: string }> = [
@@ -163,6 +185,26 @@ export async function readClipboardText() {
 
   const { readText } = await import('@tauri-apps/plugin-clipboard-manager')
   return readText()
+}
+
+export async function loadPreferences() {
+  if (!isTauriRuntime) {
+    return defaultPreferences
+  }
+
+  return invoke<Preferences>('load_preferences_command')
+}
+
+export async function savePreferences(preferences: Preferences) {
+  if (!isTauriRuntime) {
+    return preferences
+  }
+
+  return invoke<Preferences>('save_preferences_command', {
+    request: {
+      preferences,
+    },
+  })
 }
 
 function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: boolean, wrapWithParentheses: boolean) {
