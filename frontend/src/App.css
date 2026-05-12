@@ -75,45 +75,6 @@
   justify-content: flex-end;
 }
 
-.settings-menu {
-  position: relative;
-}
-
-.settings-button {
-  appearance: none;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel-soft);
-  color: var(--muted);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.settings-button.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-
-.settings-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  z-index: 8;
-  width: 260px;
-  display: grid;
-  gap: 14px;
-  padding: 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--panel) 96%, transparent);
-  box-shadow: 0 18px 38px rgba(17, 24, 28, 0.22);
-}
-
 .settings-group {
   display: grid;
   gap: 10px;
@@ -204,8 +165,7 @@
 }
 
 .app-shell[data-theme='dark'] .segmented-control button.active,
-.app-shell[data-theme='dark'] .language-switch button.active,
-.app-shell[data-theme='dark'] .settings-button.active {
+.app-shell[data-theme='dark'] .language-switch button.active {
   color: #06100e;
 }
 
@@ -220,8 +180,71 @@ h2 {
   font-size: 18px;
 }
 
+.settings-panel h2,
 h3 {
   font-size: 14px;
+}
+
+.settings-window {
+  --page: #e8ece8;
+  --panel: #f7f7f2;
+  --panel-strong: #eef0e9;
+  --panel-soft: #fbfbf6;
+  --text: #172027;
+  --muted: #66706f;
+  --line: #b9c2ba;
+  --line-strong: #8e9a94;
+  --accent: #0f766d;
+  --accent-strong: #09584f;
+  --accent-soft: rgba(15, 118, 109, 0.13);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 22px;
+  color: var(--text);
+  background: var(--page);
+}
+
+.settings-window[data-theme='dark'] {
+  --page: #111614;
+  --panel: #1a211f;
+  --panel-strong: #202a27;
+  --panel-soft: #141b19;
+  --text: #edf2ea;
+  --muted: #a0aaa3;
+  --line: #33403b;
+  --line-strong: #56675f;
+  --accent: #67d4c3;
+  --accent-strong: #9beadf;
+  --accent-soft: rgba(103, 212, 195, 0.15);
+}
+
+.settings-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-panel-header h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.settings-panel h2 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.settings-panel .sort-option-toggle {
+  min-height: 40px;
+  justify-content: flex-start;
+  padding: 0 12px;
+  border-color: var(--line);
+  border-radius: 6px;
+  background: var(--panel-soft);
+  font-size: 13px;
 }
 
 .workspace-grid {

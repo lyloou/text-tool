@@ -3,6 +3,7 @@ import './App.css'
 import InputEditor from './components/InputEditor'
 import ResultView from './components/ResultView'
 import {
+  closeSettingsWindow,
   convertAllFormats,
   commaValuesToLines,
   deduplicateLines,
@@ -32,10 +33,13 @@ type StatusKey =
 
 const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+const isSettingsWindow =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('window') === 'settings'
 
 const messages = {
   zh: {
     settings: '设置',
+    closeSettings: '关闭设置',
     editorSettings: '编辑器',
     appearanceSettings: '外观',
     shortcutSettings: '快捷键',
@@ -74,6 +78,7 @@ const messages = {
   },
   en: {
     settings: 'Settings',
+    closeSettings: 'Close settings',
     editorSettings: 'Editor',
     appearanceSettings: 'Appearance',
     shortcutSettings: 'Shortcuts',
@@ -112,12 +117,13 @@ const messages = {
   },
 } satisfies Record<Language, object>
 
+type SettingsText = (typeof messages)['zh']
+
 function App() {
   const [sourceText, setSourceText] = useState('')
   const [ignoreEmptyLines, setIgnoreEmptyLines] = useState(true)
   const [wrapWithParentheses, setWrapWithParentheses] = useState(false)
   const [preferences, setPreferences] = useState(defaultPreferences)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [resultPanelExpanded, setResultPanelExpanded] = useState(() => {
     const saved = window.localStorage.getItem(resultPanelStorageKey)
     return saved === null ? true : saved === 'true'
@@ -169,6 +175,64 @@ function App() {
   }, [])
 
   useEffect(() => {
+    let unlisten: (() => void) | undefined
+
+    async function listenForPreferenceChanges() {
+      if (!isTauriRuntime) {
+        return
+      }
+
+      const { listen } = await import('@tauri-apps/api/event')
+      unlisten = await listen<Preferences>('preferences-updated', (event) => {
+        setPreferences(event.payload)
+      })
+    }
+
+    void listenForPreferenceChanges()
+
+    return () => {
+      unlisten?.()
+    }
+  }, [])
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+
+    async function listenForResultPanelChanges() {
+      if (!isTauriRuntime) {
+        return
+      }
+
+      const { listen } = await import('@tauri-apps/api/event')
+      unlisten = await listen<boolean>('result-panel-expanded-updated', (event) => {
+        setResultPanelExpanded(event.payload)
+      })
+    }
+
+    void listenForResultPanelChanges()
+
+    return () => {
+      unlisten?.()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isSettingsWindow || !isTauriRuntime) {
+      return
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        void closeSettingsWindow()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  useEffect(() => {
     if (!toastMessage) {
       return
     }
@@ -185,7 +249,6 @@ function App() {
 
       if (event.key === '1') {
         event.preventDefault()
-        setSettingsOpen(false)
         focusEditor()
         return
       }
@@ -218,7 +281,7 @@ function App() {
         },
       }
 
-      void savePreferences(nextPreferences).catch(() => undefined)
+      void persistPreferences(nextPreferences)
       return nextPreferences
     })
   }
@@ -233,9 +296,27 @@ function App() {
         },
       }
 
-      void savePreferences(nextPreferences).catch(() => undefined)
+      void persistPreferences(nextPreferences)
       return nextPreferences
     })
+  }
+
+  async function persistPreferences(nextPreferences: Preferences) {
+    await savePreferences(nextPreferences).catch(() => undefined)
+
+    if (isTauriRuntime) {
+      const { emit } = await import('@tauri-apps/api/event')
+      await emit('preferences-updated', nextPreferences)
+    }
+  }
+
+  function updateResultPanelExpanded(value: boolean) {
+    setResultPanelExpanded(value)
+    window.localStorage.setItem(resultPanelStorageKey, String(value))
+
+    if (isTauriRuntime) {
+      void import('@tauri-apps/api/event').then(({ emit }) => emit('result-panel-expanded-updated', value))
+    }
   }
 
   function focusEditor() {
@@ -323,127 +404,22 @@ function App() {
     await getCurrentWindow().startDragging()
   }
 
+  if (isSettingsWindow) {
+    return (
+      <SettingsWindow
+        preferences={preferences}
+        resultPanelExpanded={resultPanelExpanded}
+        text={t}
+        onAppearancePreferenceChange={updateAppearancePreference}
+        onEditorPreferenceChange={updateEditorPreference}
+        onResultPanelExpandedChange={updateResultPanelExpanded}
+      />
+    )
+  }
+
   return (
     <main className="app-shell" data-theme={theme}>
-      <header className="app-header" onPointerDown={handleWindowDrag}>
-        <div className="header-metrics" aria-label={t.statusLabel}>
-          <div className="settings-menu">
-            <button
-              className={settingsOpen ? 'settings-button active' : 'settings-button'}
-              type="button"
-              title={t.settings}
-              aria-label={t.settings}
-              aria-expanded={settingsOpen}
-              onClick={() => setSettingsOpen(!settingsOpen)}
-            >
-              ⚙
-            </button>
-            {settingsOpen ? (
-              <div className="settings-popover">
-                <div className="settings-group">
-                  <h3>{t.workspaceSettings}</h3>
-                  <button
-                    className={resultPanelExpanded ? 'sort-option-toggle active' : 'sort-option-toggle'}
-                    type="button"
-                    aria-pressed={resultPanelExpanded}
-                    onClick={() => setResultPanelExpanded(!resultPanelExpanded)}
-                  >
-                    <span className="toggle-track" aria-hidden="true">
-                      <span className="toggle-thumb" />
-                    </span>
-                    <span>{t.showResults}</span>
-                  </button>
-                </div>
-                <div className="settings-group">
-                  <h3>{t.editorSettings}</h3>
-                  <button
-                    className={preferences.editor.showLineNumbers ? 'sort-option-toggle active' : 'sort-option-toggle'}
-                    type="button"
-                    aria-pressed={preferences.editor.showLineNumbers}
-                    onClick={() => updateEditorPreference('showLineNumbers', !preferences.editor.showLineNumbers)}
-                  >
-                    <span className="toggle-track" aria-hidden="true">
-                      <span className="toggle-thumb" />
-                    </span>
-                    <span>{t.showLineNumbers}</span>
-                  </button>
-                  <button
-                    className={preferences.editor.softWrap ? 'sort-option-toggle active' : 'sort-option-toggle'}
-                    type="button"
-                    aria-pressed={preferences.editor.softWrap}
-                    onClick={() => updateEditorPreference('softWrap', !preferences.editor.softWrap)}
-                  >
-                    <span className="toggle-track" aria-hidden="true">
-                      <span className="toggle-thumb" />
-                    </span>
-                    <span>{t.softWrap}</span>
-                  </button>
-                </div>
-                <div className="settings-group">
-                  <h3>{t.appearanceSettings}</h3>
-                  <div className="settings-row">
-                    <span>{t.theme}</span>
-                    <div className="segmented-control" aria-label={t.theme}>
-                      <button
-                        className={theme === 'light' ? 'active' : ''}
-                        type="button"
-                        title={t.lightTheme}
-                        aria-label={t.lightTheme}
-                        onClick={() => updateAppearancePreference('theme', 'light')}
-                      >
-                        ☀
-                      </button>
-                      <button
-                        className={theme === 'dark' ? 'active' : ''}
-                        type="button"
-                        title={t.darkTheme}
-                        aria-label={t.darkTheme}
-                        onClick={() => updateAppearancePreference('theme', 'dark')}
-                      >
-                        ◐
-                      </button>
-                    </div>
-                  </div>
-                  <div className="settings-row">
-                    <span>{t.language}</span>
-                    <div className="language-switch" aria-label={t.language}>
-                      <button
-                        className={language === 'zh' ? 'active' : ''}
-                        type="button"
-                        title="中文"
-                        aria-label="中文"
-                        onClick={() => updateAppearancePreference('language', 'zh')}
-                      >
-                        中
-                      </button>
-                      <button
-                        className={language === 'en' ? 'active' : ''}
-                        type="button"
-                        title="English"
-                        aria-label="English"
-                        onClick={() => updateAppearancePreference('language', 'en')}
-                      >
-                        EN
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="settings-group">
-                  <h3>{t.shortcutSettings}</h3>
-                  <div className="shortcut-row">
-                    <span>{t.focusEditorShortcut}</span>
-                    <kbd>⌘1</kbd>
-                  </div>
-                  <div className="shortcut-row">
-                    <span>{t.toggleResultsShortcut}</span>
-                    <kbd>⌘2</kbd>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </header>
+      <header className="app-header" onPointerDown={handleWindowDrag} />
 
       <section className={resultPanelExpanded ? 'workspace-grid' : 'workspace-grid results-collapsed'}>
         <div className="workbench-column source-column">
@@ -500,6 +476,136 @@ function App() {
           {toastMessage}
         </div>
       ) : null}
+    </main>
+  )
+}
+
+type SettingsWindowProps = {
+  preferences: Preferences
+  resultPanelExpanded: boolean
+  text: SettingsText
+  onAppearancePreferenceChange: (option: keyof Preferences['appearance'], value: Language | Theme) => void
+  onEditorPreferenceChange: (option: keyof Preferences['editor'], value: boolean) => void
+  onResultPanelExpandedChange: (value: boolean) => void
+}
+
+function SettingsWindow({
+  preferences,
+  resultPanelExpanded,
+  text,
+  onAppearancePreferenceChange,
+  onEditorPreferenceChange,
+  onResultPanelExpandedChange,
+}: SettingsWindowProps) {
+  const language = preferences.appearance.language
+  const theme = preferences.appearance.theme
+
+  return (
+    <main className="settings-window" data-theme={theme}>
+      <section className="settings-panel" aria-label={text.settings}>
+        <div className="settings-panel-header">
+          <h1>{text.settings}</h1>
+        </div>
+        <div className="settings-group">
+          <h2>{text.workspaceSettings}</h2>
+          <button
+            className={resultPanelExpanded ? 'sort-option-toggle active' : 'sort-option-toggle'}
+            type="button"
+            aria-pressed={resultPanelExpanded}
+            onClick={() => onResultPanelExpandedChange(!resultPanelExpanded)}
+          >
+            <span className="toggle-track" aria-hidden="true">
+              <span className="toggle-thumb" />
+            </span>
+            <span>{text.showResults}</span>
+          </button>
+        </div>
+        <div className="settings-group">
+          <h2>{text.editorSettings}</h2>
+          <button
+            className={preferences.editor.showLineNumbers ? 'sort-option-toggle active' : 'sort-option-toggle'}
+            type="button"
+            aria-pressed={preferences.editor.showLineNumbers}
+            onClick={() => onEditorPreferenceChange('showLineNumbers', !preferences.editor.showLineNumbers)}
+          >
+            <span className="toggle-track" aria-hidden="true">
+              <span className="toggle-thumb" />
+            </span>
+            <span>{text.showLineNumbers}</span>
+          </button>
+          <button
+            className={preferences.editor.softWrap ? 'sort-option-toggle active' : 'sort-option-toggle'}
+            type="button"
+            aria-pressed={preferences.editor.softWrap}
+            onClick={() => onEditorPreferenceChange('softWrap', !preferences.editor.softWrap)}
+          >
+            <span className="toggle-track" aria-hidden="true">
+              <span className="toggle-thumb" />
+            </span>
+            <span>{text.softWrap}</span>
+          </button>
+        </div>
+        <div className="settings-group">
+          <h2>{text.appearanceSettings}</h2>
+          <div className="settings-row">
+            <span>{text.theme}</span>
+            <div className="segmented-control" aria-label={text.theme}>
+              <button
+                className={theme === 'light' ? 'active' : ''}
+                type="button"
+                title={text.lightTheme}
+                aria-label={text.lightTheme}
+                onClick={() => onAppearancePreferenceChange('theme', 'light')}
+              >
+                ☀
+              </button>
+              <button
+                className={theme === 'dark' ? 'active' : ''}
+                type="button"
+                title={text.darkTheme}
+                aria-label={text.darkTheme}
+                onClick={() => onAppearancePreferenceChange('theme', 'dark')}
+              >
+                ◐
+              </button>
+            </div>
+          </div>
+          <div className="settings-row">
+            <span>{text.language}</span>
+            <div className="language-switch" aria-label={text.language}>
+              <button
+                className={language === 'zh' ? 'active' : ''}
+                type="button"
+                title="中文"
+                aria-label="中文"
+                onClick={() => onAppearancePreferenceChange('language', 'zh')}
+              >
+                中
+              </button>
+              <button
+                className={language === 'en' ? 'active' : ''}
+                type="button"
+                title="English"
+                aria-label="English"
+                onClick={() => onAppearancePreferenceChange('language', 'en')}
+              >
+                EN
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="settings-group">
+          <h2>{text.shortcutSettings}</h2>
+          <div className="shortcut-row">
+            <span>{text.focusEditorShortcut}</span>
+            <kbd>⌘1</kbd>
+          </div>
+          <div className="shortcut-row">
+            <span>{text.toggleResultsShortcut}</span>
+            <kbd>⌘2</kbd>
+          </div>
+        </div>
+      </section>
     </main>
   )
 }

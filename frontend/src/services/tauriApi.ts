@@ -166,6 +166,14 @@ export async function savePreferences(preferences: Preferences) {
   })
 }
 
+export async function closeSettingsWindow() {
+  if (!isTauriRuntime) {
+    return
+  }
+
+  return invoke('close_settings_window_command')
+}
+
 function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: boolean, wrapWithParentheses: boolean) {
   const output = input
     .split('\n')
