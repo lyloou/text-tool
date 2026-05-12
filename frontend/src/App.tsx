@@ -59,7 +59,7 @@ type HistorySnapshot = {
   status: StatusKey
 }
 
-const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
+const resultPanelStorageKey = 'text-tool.resultPanelExpanded'
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 const isSettingsWindow =
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('window') === 'settings'

@@ -40,7 +40,7 @@
 ## 当前工程结构
 
 ```text
-rust-data-process/
+text-tool/
 ├── frontend/
 │   └── src/
 │       ├── App.tsx

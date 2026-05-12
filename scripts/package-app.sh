@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAURI_CLI="$ROOT_DIR/frontend/node_modules/.bin/tauri"
+PACKAGE_TARGET_DIR="$ROOT_DIR/target/texttool-package"
 
 cd "$ROOT_DIR"
 
@@ -21,6 +22,6 @@ echo "Building frontend..."
 npm --prefix frontend run build
 
 echo "Building macOS app bundle..."
-"$TAURI_CLI" build --bundles app
+CARGO_TARGET_DIR="$PACKAGE_TARGET_DIR" "$TAURI_CLI" build --bundles app
 
-echo "Done. App bundle: target/release/bundle/macos/TextTool.app"
+echo "Done. App bundle: target/texttool-package/release/bundle/macos/TextTool.app"
