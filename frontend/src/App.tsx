@@ -51,6 +51,14 @@ type FindPanelState = {
   error: string
 }
 
+type HistorySnapshot = {
+  sourceText: string
+  ignoreEmptyLines: boolean
+  wrapWithParentheses: boolean
+  numericSort: boolean
+  status: StatusKey
+}
+
 const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 const isSettingsWindow =
@@ -168,8 +176,14 @@ function App() {
   const [findPanel, setFindPanel] = useState<FindPanelState>(defaultFindPanel)
   const [status, setStatus] = useState<StatusKey>('ready')
   const [toastMessage, setToastMessage] = useState('')
+  const [, setHistoryPast] = useState<HistorySnapshot[]>([])
+  const [, setHistoryFuture] = useState<HistorySnapshot[]>([])
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const sourceTextRef = useRef('')
+  const ignoreEmptyLinesRef = useRef(true)
+  const wrapWithParenthesesRef = useRef(false)
+  const numericSortRef = useRef(false)
+  const statusRef = useRef<StatusKey>('ready')
   const language = preferences.appearance.language
   const theme = preferences.appearance.theme
   const t = messages[language]
@@ -181,6 +195,26 @@ function App() {
 
     return sourceText.split('\n').length
   }, [sourceText])
+
+  useEffect(() => {
+    sourceTextRef.current = sourceText
+  }, [sourceText])
+
+  useEffect(() => {
+    ignoreEmptyLinesRef.current = ignoreEmptyLines
+  }, [ignoreEmptyLines])
+
+  useEffect(() => {
+    wrapWithParenthesesRef.current = wrapWithParentheses
+  }, [wrapWithParentheses])
+
+  useEffect(() => {
+    numericSortRef.current = numericSort
+  }, [numericSort])
+
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
 
   useEffect(() => {
     if (resultPanelExpanded) {
@@ -347,8 +381,29 @@ function App() {
   }, [findPanel.expanded])
 
   useEffect(() => {
+    if (isSettingsWindow) {
+      return
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
-      if (!event.metaKey || event.shiftKey || event.ctrlKey) {
+      if (!event.metaKey || event.ctrlKey) {
+        return
+      }
+
+      const key = event.key.toLowerCase()
+
+      if (key === 'z') {
+        event.preventDefault()
+
+        if (event.shiftKey) {
+          redoHistory()
+        } else {
+          undoHistory()
+        }
+        return
+      }
+
+      if (event.shiftKey) {
         return
       }
 
@@ -363,8 +418,6 @@ function App() {
         setResultPanelExpanded((current) => !current)
         return
       }
-
-      const key = event.key.toLowerCase()
 
       if (key === 'f') {
         event.preventDefault()
@@ -444,9 +497,76 @@ function App() {
     return editorRef.current?.value ?? sourceTextRef.current
   }
 
+  function getHistorySnapshot(): HistorySnapshot {
+    return {
+      sourceText: sourceTextRef.current,
+      ignoreEmptyLines: ignoreEmptyLinesRef.current,
+      wrapWithParentheses: wrapWithParenthesesRef.current,
+      numericSort: numericSortRef.current,
+      status: statusRef.current,
+    }
+  }
+
+  function applyHistorySnapshot(snapshot: HistorySnapshot) {
+    sourceTextRef.current = snapshot.sourceText
+    ignoreEmptyLinesRef.current = snapshot.ignoreEmptyLines
+    wrapWithParenthesesRef.current = snapshot.wrapWithParentheses
+    numericSortRef.current = snapshot.numericSort
+    statusRef.current = snapshot.status
+    setSourceText(snapshot.sourceText)
+    setIgnoreEmptyLines(snapshot.ignoreEmptyLines)
+    setWrapWithParentheses(snapshot.wrapWithParentheses)
+    setNumericSort(snapshot.numericSort)
+    setStatus(snapshot.status)
+  }
+
+  function commitHistorySnapshot(nextSnapshot: HistorySnapshot) {
+    const currentSnapshot = getHistorySnapshot()
+
+    if (areHistorySnapshotsEqual(currentSnapshot, nextSnapshot)) {
+      return
+    }
+
+    setHistoryPast((current) => [...current, currentSnapshot])
+    setHistoryFuture([])
+    applyHistorySnapshot(nextSnapshot)
+  }
+
+  function updateUndoableState(values: Partial<HistorySnapshot>) {
+    commitHistorySnapshot({
+      ...getHistorySnapshot(),
+      ...values,
+    })
+  }
+
   function updateSourceText(value: string) {
-    sourceTextRef.current = value
-    setSourceText(value)
+    updateUndoableState({ sourceText: value })
+  }
+
+  function undoHistory() {
+    setHistoryPast((past) => {
+      if (!past.length) {
+        return past
+      }
+
+      const previousSnapshot = past[past.length - 1]
+      setHistoryFuture((future) => [getHistorySnapshot(), ...future])
+      applyHistorySnapshot(previousSnapshot)
+      return past.slice(0, -1)
+    })
+  }
+
+  function redoHistory() {
+    setHistoryFuture((future) => {
+      if (!future.length) {
+        return future
+      }
+
+      const nextSnapshot = future[0]
+      setHistoryPast((past) => [...past, getHistorySnapshot()])
+      applyHistorySnapshot(nextSnapshot)
+      return future.slice(1)
+    })
   }
 
   function getSelectedText() {
@@ -545,8 +665,7 @@ function App() {
       const result = await replaceFirst(input, findPanel.query, findPanel.replaceWith, getFindOptions(findPanel))
       const nextText = activeMatch ? source.slice(0, activeMatch.start) + result.output : result.output
 
-      updateSourceText(nextText)
-      setStatus('replaced')
+      updateUndoableState({ sourceText: nextText, status: 'replaced' })
       return {
         nextText,
         replacedAt: activeMatch?.start ?? 0,
@@ -587,8 +706,7 @@ function App() {
 
     try {
       const result = await replaceAll(getCurrentSourceText(), findPanel.query, findPanel.replaceWith, getFindOptions(findPanel))
-      updateSourceText(result.output)
-      setStatus('replaced')
+      updateUndoableState({ sourceText: result.output, status: 'replaced' })
     } catch (error) {
       updateFindPanel({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -596,37 +714,31 @@ function App() {
 
   async function handleReverseLines() {
     const reversedText = reverseLinesLocal(getCurrentSourceText())
-    updateSourceText(reversedText)
-    setStatus('reversed')
+    updateUndoableState({ sourceText: reversedText, status: 'reversed' })
   }
 
   async function handleDeduplicateLines() {
     const result = await deduplicateLines(getCurrentSourceText())
-    updateSourceText(result.output)
-    setStatus('deduplicated')
+    updateUndoableState({ sourceText: result.output, status: 'deduplicated' })
   }
 
   async function handleSortLines() {
     const result = await sortLinesAscending(getCurrentSourceText(), numericSort)
-    updateSourceText(result.output)
-    setStatus('sorted')
+    updateUndoableState({ sourceText: result.output, status: 'sorted' })
   }
 
   async function handleSortLinesDescending() {
     const result = await sortLinesDescending(getCurrentSourceText(), numericSort)
-    updateSourceText(result.output)
-    setStatus('sorted')
+    updateUndoableState({ sourceText: result.output, status: 'sorted' })
   }
 
   async function handleCommaValuesToLines() {
     const result = await commaValuesToLines(getCurrentSourceText())
-    updateSourceText(result.output)
-    setStatus('commaToLines')
+    updateUndoableState({ sourceText: result.output, status: 'commaToLines' })
   }
 
   async function handleClearSource() {
-    updateSourceText('')
-    setStatus('cleared')
+    updateUndoableState({ sourceText: '', status: 'cleared' })
   }
 
   async function handleCopySource() {
@@ -643,8 +755,7 @@ function App() {
 
   async function handlePasteSource() {
     const text = await readClipboardText()
-    updateSourceText(text)
-    setStatus('pasted')
+    updateUndoableState({ sourceText: text, status: 'pasted' })
   }
 
   async function handleCopy(output: string) {
@@ -701,7 +812,7 @@ function App() {
             onReplaceCurrent={() => void handleReplaceCurrent()}
             onReplaceCurrentAndFindNext={() => void handleReplaceCurrentAndFindNext()}
             onReplaceAll={() => void handleReplaceAll()}
-            onNumericSortChange={setNumericSort}
+            onNumericSortChange={(value) => updateUndoableState({ numericSort: value })}
             onCopySource={() => void handleCopySource()}
             onClearSource={() => void handleClearSource()}
             onPasteSource={() => void handlePasteSource()}
@@ -720,8 +831,8 @@ function App() {
             outputs={resultOutputs}
             text={resultText[language]}
             formatLabels={t.formats}
-            onIgnoreEmptyLinesChange={setIgnoreEmptyLines}
-            onWrapWithParenthesesChange={setWrapWithParentheses}
+            onIgnoreEmptyLinesChange={(value) => updateUndoableState({ ignoreEmptyLines: value })}
+            onWrapWithParenthesesChange={(value) => updateUndoableState({ wrapWithParentheses: value })}
             onCopy={(output) => void handleCopy(output)}
           />
         ) : null}
@@ -968,6 +1079,16 @@ function getFindOptions(state: Pick<FindPanelState, 'caseSensitive' | 'wholeWord
     wholeWord: state.wholeWord,
     useRegex: state.useRegex,
   }
+}
+
+function areHistorySnapshotsEqual(first: HistorySnapshot, second: HistorySnapshot) {
+  return (
+    first.sourceText === second.sourceText &&
+    first.ignoreEmptyLines === second.ignoreEmptyLines &&
+    first.wrapWithParentheses === second.wrapWithParentheses &&
+    first.numericSort === second.numericSort &&
+    first.status === second.status
+  )
 }
 
 function getNextActiveMatchIndex(matches: SearchMatch[], currentIndex: number) {
