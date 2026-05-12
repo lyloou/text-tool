@@ -143,14 +143,34 @@
   gap: 12px;
 }
 
-.settings-row > span {
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-row > span,
+.shortcut-row > span {
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
 }
 
-.status-bar-group span,
-.match-count {
+.shortcut-row kbd {
+  min-width: 42px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.status-bar-group span {
   border: 1px solid var(--line);
   background: var(--panel-soft);
   color: var(--muted);
@@ -161,8 +181,7 @@
 }
 
 .segmented-control,
-.language-switch,
-.result-visibility-switch {
+.language-switch {
   display: inline-flex;
   padding: 3px;
   border: 1px solid var(--line);
@@ -171,8 +190,7 @@
 }
 
 .segmented-control button,
-.language-switch button,
-.result-visibility-switch button {
+.language-switch button {
   appearance: none;
   min-width: 28px;
   border: 0;
@@ -187,15 +205,13 @@
 }
 
 .segmented-control button.active,
-.language-switch button.active,
-.result-visibility-switch button.active {
+.language-switch button.active {
   background: var(--accent);
   color: var(--page);
 }
 
 .app-shell[data-theme='dark'] .segmented-control button.active,
 .app-shell[data-theme='dark'] .language-switch button.active,
-.app-shell[data-theme='dark'] .result-visibility-switch button.active,
 .app-shell[data-theme='dark'] .settings-button.active {
   color: #06100e;
 }
@@ -348,50 +364,10 @@ h3 {
   transform: translateX(11px);
 }
 
-.option-chip {
-  appearance: none;
-  min-height: 32px;
-  padding: 0 9px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--button);
-  color: var(--button-text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.option-chip span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.find-popover .option-chip {
-  width: 32px;
-  min-width: 32px;
-  justify-content: center;
-  padding: 0;
-}
-
 .compact-button {
   min-height: 32px;
   padding: 0 10px;
   font-size: 12px;
-}
-
-.option-chip.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-
-.option-chip.active span {
-  color: var(--accent-strong);
 }
 
 label span {
@@ -455,78 +431,6 @@ input:focus,
   border: 1px solid var(--line-strong);
   border-radius: 7px;
   background: var(--editor);
-}
-
-.find-popover {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 4;
-  width: min(560px, calc(100% - 24px));
-  display: grid;
-  gap: 8px;
-  padding: 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  box-shadow: 0 18px 36px rgba(17, 24, 28, 0.24);
-}
-
-.find-popover-main,
-.find-popover-options,
-.replace-drawer {
-  display: grid;
-  gap: 8px;
-}
-
-.find-popover-main {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-}
-
-.find-field {
-  display: grid;
-  gap: 5px;
-}
-
-.find-popover-options {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-}
-
-.find-option-group,
-.replace-actions {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-
-.replace-drawer {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
-}
-
-.find-match-pill {
-  min-height: 36px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel-soft);
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.find-popover-hint {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
 }
 
 .editor-overlay {
@@ -683,18 +587,6 @@ input:focus,
   color: var(--muted);
 }
 
-mark {
-  background: var(--mark);
-  color: #111820;
-  border-radius: 3px;
-  padding: 1px 0;
-}
-
-.match-count {
-  margin: 0;
-  white-space: nowrap;
-}
-
 .primary-button,
 .secondary-button {
   appearance: none;
@@ -814,26 +706,4 @@ mark {
     min-height: 320px;
   }
 
-  .find-popover {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    left: 8px;
-    width: auto;
-  }
-
-  .find-popover-main,
-  .find-popover-options,
-  .replace-drawer {
-    grid-template-columns: 1fr;
-  }
-
-  .find-popover-options {
-    align-items: stretch;
-  }
-
-  .find-option-group,
-  .replace-actions {
-    align-items: stretch;
-  }
 }

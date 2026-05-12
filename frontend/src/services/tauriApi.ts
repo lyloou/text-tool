@@ -2,17 +2,6 @@ import { invoke } from '@tauri-apps/api/core'
 
 export type ConvertMode = 'double' | 'single' | 'plain'
 
-export type SearchMatch = {
-  start: number
-  end: number
-}
-
-export type FindOptions = {
-  caseSensitive: boolean
-  wholeWord: boolean
-  useRegex: boolean
-}
-
 export type ResultOutput = {
   format: ConvertMode
   label: string
@@ -88,22 +77,6 @@ export async function convertAllFormats(
   return outputs
 }
 
-export async function replaceText(input: string, find: string, replaceWith: string, options: FindOptions, replaceAll: boolean) {
-  if (!isTauriRuntime) {
-    return { output: replaceTextLocal(input, find, replaceWith, options, replaceAll) }
-  }
-
-  return invoke<{ output: string }>('replace_text_command', {
-    request: {
-      input,
-      find,
-      replaceWith,
-      ...options,
-      replaceAll,
-    },
-  })
-}
-
 export async function deduplicateLines(input: string) {
   if (!isTauriRuntime) {
     return { output: deduplicateLinesLocal(input) }
@@ -150,20 +123,6 @@ export async function commaValuesToLines(input: string) {
   return invoke<{ output: string }>('comma_values_to_lines_command', {
     request: {
       input,
-    },
-  })
-}
-
-export async function searchMatches(text: string, query: string, options: FindOptions) {
-  if (!isTauriRuntime) {
-    return { matches: searchMatchesLocal(text, query, options) }
-  }
-
-  return invoke<{ matches: SearchMatch[] }>('search_matches_command', {
-    request: {
-      output: text,
-      query,
-      ...options,
     },
   })
 }
@@ -226,41 +185,6 @@ function convertLinesLocal(input: string, mode: ConvertMode, ignoreEmptyLines: b
     .join(',')
 
   return wrapWithParentheses ? `(${output})` : output
-}
-
-function searchMatchesLocal(output: string, query: string, options: FindOptions) {
-  if (!query) {
-    return []
-  }
-
-  const regex = buildFindRegex(query, options)
-  const matches: SearchMatch[] = []
-
-  for (const match of output.matchAll(regex)) {
-    if (typeof match.index === 'number') {
-      matches.push({
-        start: match.index,
-        end: match.index + match[0].length,
-      })
-    }
-  }
-
-  return matches
-}
-
-function replaceTextLocal(
-  input: string,
-  find: string,
-  replaceWith: string,
-  options: FindOptions,
-  replaceAll: boolean,
-) {
-  if (!find) {
-    return input
-  }
-
-  const regex = buildFindRegex(find, options, replaceAll)
-  return input.replace(regex, replaceWith)
 }
 
 function deduplicateLinesLocal(input: string) {
@@ -335,15 +259,4 @@ function stripWrappingQuotes(value: string) {
   }
 
   return value
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function buildFindRegex(query: string, options: FindOptions, replaceAll = true) {
-  const flags = `${replaceAll ? 'g' : ''}${options.caseSensitive ? '' : 'i'}`
-  const pattern = options.useRegex ? query : escapeRegExp(query)
-  const wholeWordPattern = options.wholeWord ? `\\b(?:${pattern})\\b` : pattern
-  return new RegExp(wholeWordPattern, flags)
 }

@@ -9,16 +9,12 @@ import {
   defaultPreferences,
   loadPreferences,
   readClipboardText,
-  replaceText,
   savePreferences,
-  searchMatches,
   sortLinesAscending,
   sortLinesDescending,
   writeClipboardText,
-  type FindOptions,
   type Preferences,
   type ResultOutput,
-  type SearchMatch,
 } from './services/tauriApi'
 
 type Language = Preferences['appearance']['language']
@@ -26,8 +22,6 @@ type Theme = Preferences['appearance']['theme']
 type StatusKey =
   | 'ready'
   | 'converted'
-  | 'replaced'
-  | 'noSearchTerm'
   | 'reversed'
   | 'deduplicated'
   | 'sorted'
@@ -35,7 +29,6 @@ type StatusKey =
   | 'cleared'
   | 'pasted'
   | 'copied'
-  | 'invalidSearch'
 
 const resultPanelStorageKey = 'rust-data-process.resultPanelExpanded'
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -45,16 +38,19 @@ const messages = {
     settings: '设置',
     editorSettings: '编辑器',
     appearanceSettings: '外观',
+    shortcutSettings: '快捷键',
+    workspaceSettings: '工作区',
+    showResults: '显示结果区',
     showLineNumbers: '显示行号',
     softWrap: '自动换行',
+    focusEditorShortcut: '聚焦编辑区',
+    toggleResultsShortcut: '显示/隐藏结果区',
     statusLabel: '当前文档状态',
     lines: '行',
-    matches: '匹配',
     language: '语言',
     theme: '主题',
     lightTheme: '日间',
     darkTheme: '夜间',
-    invalidSearch: '查找表达式无效',
     footerReady: '已准备处理 UTF-8 文本',
     footerEncoding: 'UTF-8',
     footerLocal: '本地处理',
@@ -67,8 +63,6 @@ const messages = {
     status: {
       ready: '就绪',
       converted: '已转换',
-      replaced: '已替换原始内容',
-      noSearchTerm: '未输入查找内容',
       reversed: '已按行逆序',
       deduplicated: '已按行去重',
       sorted: '已升序排序',
@@ -76,23 +70,25 @@ const messages = {
       cleared: '已清除原始内容',
       pasted: '已从剪贴板粘贴',
       copied: '已复制',
-      invalidSearch: '查找表达式无效',
     },
   },
   en: {
     settings: 'Settings',
     editorSettings: 'Editor',
     appearanceSettings: 'Appearance',
+    shortcutSettings: 'Shortcuts',
+    workspaceSettings: 'Workspace',
+    showResults: 'Show results',
     showLineNumbers: 'Line numbers',
     softWrap: 'Soft wrap',
+    focusEditorShortcut: 'Focus editor',
+    toggleResultsShortcut: 'Show/hide results',
     statusLabel: 'Current document status',
     lines: 'lines',
-    matches: 'matches',
     language: 'Language',
     theme: 'Theme',
     lightTheme: 'Light',
     darkTheme: 'Dark',
-    invalidSearch: 'Invalid search expression',
     footerReady: 'Ready for UTF-8 source text',
     footerEncoding: 'UTF-8',
     footerLocal: 'Local processing',
@@ -105,8 +101,6 @@ const messages = {
     status: {
       ready: 'Ready',
       converted: 'Converted',
-      replaced: 'Replaced source text',
-      noSearchTerm: 'No search term',
       reversed: 'Reversed source lines',
       deduplicated: 'Deduplicated source lines',
       sorted: 'Sorted source lines',
@@ -114,7 +108,6 @@ const messages = {
       cleared: 'Cleared source text',
       pasted: 'Pasted from clipboard',
       copied: 'Copied',
-      invalidSearch: 'Invalid search expression',
     },
   },
 } satisfies Record<Language, object>
@@ -129,22 +122,10 @@ function App() {
     const saved = window.localStorage.getItem(resultPanelStorageKey)
     return saved === null ? true : saved === 'true'
   })
-  const [replaceQuery, setReplaceQuery] = useState('')
-  const [replaceWith, setReplaceWith] = useState('')
   const [numericSort, setNumericSort] = useState(false)
-  const [findOptions, setFindOptions] = useState<FindOptions>({
-    caseSensitive: false,
-    wholeWord: false,
-    useRegex: false,
-  })
-  const [findVisible, setFindVisible] = useState(false)
-  const [replaceVisible, setReplaceVisible] = useState(false)
-  const [sourceMatches, setSourceMatches] = useState<SearchMatch[]>([])
   const [resultOutputs, setResultOutputs] = useState<ResultOutput[]>([])
   const [status, setStatus] = useState<StatusKey>('ready')
   const [toastMessage, setToastMessage] = useState('')
-  const findInputRef = useRef<HTMLInputElement>(null)
-  const replaceInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const sourceTextRef = useRef('')
   const language = preferences.appearance.language
@@ -158,10 +139,6 @@ function App() {
 
     return sourceText.split('\n').length
   }, [sourceText])
-
-  useEffect(() => {
-    void refreshMatches(sourceText, replaceQuery)
-  }, [sourceText, replaceQuery, findOptions])
 
   useEffect(() => {
     if (resultPanelExpanded) {
@@ -202,27 +179,23 @@ function App() {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (!event.metaKey || event.shiftKey || event.ctrlKey || event.key.toLowerCase() !== 'f') {
+      if (!event.metaKey || event.shiftKey || event.ctrlKey) {
         return
       }
 
-      event.preventDefault()
-      setFindVisible(true)
-
-      if (event.altKey) {
-        setReplaceVisible(true)
-        window.requestAnimationFrame(() => {
-          replaceInputRef.current?.focus()
-          replaceInputRef.current?.select()
-        })
+      if (event.key === '1') {
+        event.preventDefault()
+        setSettingsOpen(false)
+        focusEditor()
         return
       }
 
-      setReplaceVisible(false)
-      window.requestAnimationFrame(() => {
-        findInputRef.current?.focus()
-        findInputRef.current?.select()
-      })
+      if (event.key === '2') {
+        event.preventDefault()
+        setResultPanelExpanded((current) => !current)
+        return
+      }
+
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -233,45 +206,6 @@ function App() {
     const outputs = await convertAllFormats(nextSourceText, ignoreEmptyLines, wrapWithParentheses)
     setResultOutputs(outputs)
     setStatus('converted')
-  }
-
-  async function runReplace(replaceAllMatches: boolean) {
-    if (!replaceQuery) {
-      setStatus('noSearchTerm')
-      return
-    }
-
-    try {
-      const result = await replaceText(getCurrentSourceText(), replaceQuery, replaceWith, findOptions, replaceAllMatches)
-      updateSourceText(result.output)
-      setStatus('replaced')
-    } catch {
-      setSourceMatches([])
-      setStatus('invalidSearch')
-      setToastMessage(t.invalidSearch)
-    }
-  }
-
-  async function refreshMatches(text: string, query: string) {
-    if (!query) {
-      setSourceMatches([])
-      return
-    }
-
-    try {
-      const result = await searchMatches(text, query, findOptions)
-      setSourceMatches(result.matches)
-    } catch {
-      setSourceMatches([])
-      setStatus('invalidSearch')
-    }
-  }
-
-  function updateFindOption(option: keyof FindOptions, value: boolean) {
-    setFindOptions((current) => ({
-      ...current,
-      [option]: value,
-    }))
   }
 
   function updateEditorPreference(option: keyof typeof preferences.editor, value: boolean) {
@@ -315,17 +249,6 @@ function App() {
   function updateSourceText(value: string) {
     sourceTextRef.current = value
     setSourceText(value)
-  }
-
-  function handleFindEscape() {
-    if (replaceVisible) {
-      setReplaceVisible(false)
-      window.requestAnimationFrame(() => findInputRef.current?.focus())
-      return
-    }
-
-    setFindVisible(false)
-    focusEditor()
   }
 
   async function handleReverseLines() {
@@ -375,19 +298,6 @@ function App() {
     setToastMessage(t.toastCopied)
   }
 
-  async function handleCopyHighlights() {
-    const text = getCurrentSourceText()
-
-    if (!replaceQuery || !sourceMatches.length) {
-      return
-    }
-
-    const highlightedText = sourceMatches.map((match) => text.slice(match.start, match.end)).join('\n')
-    await writeClipboardText(highlightedText)
-    setStatus('copied')
-    setToastMessage(t.toastCopied)
-  }
-
   async function handlePasteSource() {
     const text = await readClipboardText()
     updateSourceText(text)
@@ -417,26 +327,6 @@ function App() {
     <main className="app-shell" data-theme={theme}>
       <header className="app-header" onPointerDown={handleWindowDrag}>
         <div className="header-metrics" aria-label={t.statusLabel}>
-          <div className="result-visibility-switch" aria-label={resultText[language].visibility}>
-            <button
-              className={resultPanelExpanded ? 'active' : ''}
-              type="button"
-              title={resultText[language].showResults}
-              aria-label={resultText[language].showResults}
-              onClick={() => setResultPanelExpanded(true)}
-            >
-              ▣
-            </button>
-            <button
-              className={!resultPanelExpanded ? 'active' : ''}
-              type="button"
-              title={resultText[language].hideResults}
-              aria-label={resultText[language].hideResults}
-              onClick={() => setResultPanelExpanded(false)}
-            >
-              □
-            </button>
-          </div>
           <div className="settings-menu">
             <button
               className={settingsOpen ? 'settings-button active' : 'settings-button'}
@@ -450,6 +340,20 @@ function App() {
             </button>
             {settingsOpen ? (
               <div className="settings-popover">
+                <div className="settings-group">
+                  <h3>{t.workspaceSettings}</h3>
+                  <button
+                    className={resultPanelExpanded ? 'sort-option-toggle active' : 'sort-option-toggle'}
+                    type="button"
+                    aria-pressed={resultPanelExpanded}
+                    onClick={() => setResultPanelExpanded(!resultPanelExpanded)}
+                  >
+                    <span className="toggle-track" aria-hidden="true">
+                      <span className="toggle-thumb" />
+                    </span>
+                    <span>{t.showResults}</span>
+                  </button>
+                </div>
                 <div className="settings-group">
                   <h3>{t.editorSettings}</h3>
                   <button
@@ -524,6 +428,17 @@ function App() {
                     </div>
                   </div>
                 </div>
+                <div className="settings-group">
+                  <h3>{t.shortcutSettings}</h3>
+                  <div className="shortcut-row">
+                    <span>{t.focusEditorShortcut}</span>
+                    <kbd>⌘1</kbd>
+                  </div>
+                  <div className="shortcut-row">
+                    <span>{t.toggleResultsShortcut}</span>
+                    <kbd>⌘2</kbd>
+                  </div>
+                </div>
               </div>
             ) : null}
           </div>
@@ -534,34 +449,16 @@ function App() {
         <div className="workbench-column source-column">
           <InputEditor
             editorRef={editorRef}
-            findInputRef={findInputRef}
-            replaceInputRef={replaceInputRef}
             value={sourceText}
-            searchQuery={replaceQuery}
-            replaceWith={replaceWith}
-            matches={sourceMatches}
-            findOptions={findOptions}
-            findVisible={findVisible}
-            replaceVisible={replaceVisible}
             numericSort={numericSort}
             showLineNumbers={preferences.editor.showLineNumbers}
             softWrap={preferences.editor.softWrap}
             text={inputText[language]}
             onChange={updateSourceText}
-            onSearchQueryChange={setReplaceQuery}
-            onReplaceWithChange={setReplaceWith}
-            onFindOptionChange={updateFindOption}
-            onReplaceVisibleChange={setReplaceVisible}
-            onReplace={() => void runReplace(false)}
-            onReplaceAll={() => void runReplace(true)}
-            onFindEscape={handleFindEscape}
             onNumericSortChange={setNumericSort}
             onCopySource={() => void handleCopySource()}
-            onCopyHighlights={() => void handleCopyHighlights()}
             onClearSource={() => void handleClearSource()}
             onPasteSource={() => void handlePasteSource()}
-            showCopyHighlights={replaceQuery.length > 0}
-            canCopyHighlights={sourceMatches.length > 0}
             onReverseLines={() => void handleReverseLines()}
             onDeduplicateLines={() => void handleDeduplicateLines()}
             onSortLines={() => void handleSortLines()}
@@ -590,9 +487,6 @@ function App() {
           <span>
             {lineCount} {t.lines}
           </span>
-          <span>
-            {sourceMatches.length} {t.matches}
-          </span>
         </div>
         <div className="status-bar-group">
           <span>{t.footerReady}</span>
@@ -613,7 +507,6 @@ function App() {
 const inputText = {
   zh: {
     copy: '复制',
-    copyHighlights: '复制高亮',
     paste: '粘贴',
     clear: '清除',
     lineTools: '行工具',
@@ -623,22 +516,10 @@ const inputText = {
     sortLinesDescending: '降序',
     numericSort: '数字排序',
     commaToLines: '逗号转行',
-    find: '查找',
-    replaceWith: '替换为',
-    matchCount: (count: number) => `命中 ${count} 项`,
-    matchHint: (query: string, count: number) => (query ? `匹配 ${count} 项` : '输入查找内容'),
-    caseSensitive: '区分大小写',
-    wholeWord: '整字',
-    useRegex: '正则',
-    showReplace: '展开替换',
-    hideReplace: '收起替换',
-    replaceOne: '替换',
-    replaceAll: '全部替换',
     placeholder: '请输入内容',
   },
   en: {
     copy: 'Copy',
-    copyHighlights: 'Copy highlights',
     paste: 'Paste',
     clear: 'Clear',
     lineTools: 'Line tools',
@@ -648,17 +529,6 @@ const inputText = {
     sortLinesDescending: 'Reverse sort',
     numericSort: 'Numeric sort',
     commaToLines: 'Comma to lines',
-    find: 'Find',
-    replaceWith: 'Replace with',
-    matchCount: (count: number) => `${count} matches`,
-    matchHint: (query: string, count: number) => (query ? `${count} matches` : 'Enter a search term'),
-    caseSensitive: 'Match case',
-    wholeWord: 'Whole word',
-    useRegex: 'Regex',
-    showReplace: 'Show replace',
-    hideReplace: 'Hide replace',
-    replaceOne: 'Replace',
-    replaceAll: 'Replace all',
     placeholder: 'Enter content',
   },
 }

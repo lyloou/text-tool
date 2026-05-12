@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 use text_core::{
-    ConvertMode, SearchMatch, comma_values_to_lines, convert_lines, deduplicate_lines,
-    replace_all, replace_first, search_matches, sort_lines_ascending, sort_lines_descending,
-    FindOptions,
+    ConvertMode, comma_values_to_lines, convert_lines, deduplicate_lines,
+    sort_lines_ascending, sort_lines_descending,
 };
 
 #[derive(Debug, Deserialize)]
@@ -12,28 +11,6 @@ pub struct ConvertLinesRequest {
     pub mode: String,
     pub ignore_empty_lines: bool,
     pub wrap_with_parentheses: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReplaceTextRequest {
-    pub input: String,
-    pub find: String,
-    pub replace_with: String,
-    pub case_sensitive: bool,
-    pub whole_word: bool,
-    pub use_regex: bool,
-    pub replace_all: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SearchMatchesRequest {
-    pub output: String,
-    pub query: String,
-    pub case_sensitive: bool,
-    pub whole_word: bool,
-    pub use_regex: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -57,18 +34,6 @@ pub struct ConvertLinesResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct ReplaceTextResponse {
-    pub output: String,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SearchMatchesResponse {
-    pub matches: Vec<SearchMatch>,
-}
-
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct LineOperationResponse {
     pub output: String,
 }
@@ -83,32 +48,6 @@ pub fn convert_lines_command(request: ConvertLinesRequest) -> Result<ConvertLine
         request.wrap_with_parentheses,
     );
     Ok(ConvertLinesResponse { output })
-}
-
-#[tauri::command]
-pub fn replace_text_command(request: ReplaceTextRequest) -> Result<ReplaceTextResponse, String> {
-    let options = find_options(&request);
-    let output = if request.replace_all {
-        replace_all(&request.input, &request.find, &request.replace_with, options)?
-    } else {
-        replace_first(&request.input, &request.find, &request.replace_with, options)?
-    };
-
-    Ok(ReplaceTextResponse { output })
-}
-
-#[tauri::command]
-pub fn search_matches_command(request: SearchMatchesRequest) -> Result<SearchMatchesResponse, String> {
-    let matches = search_matches(
-        &request.output,
-        &request.query,
-        FindOptions {
-            case_sensitive: request.case_sensitive,
-            whole_word: request.whole_word,
-            use_regex: request.use_regex,
-        },
-    )?;
-    Ok(SearchMatchesResponse { matches })
 }
 
 #[tauri::command]
@@ -141,13 +80,5 @@ fn parse_mode(value: &str) -> Result<ConvertMode, String> {
         "single" => Ok(ConvertMode::SingleQuoted),
         "plain" => Ok(ConvertMode::Plain),
         _ => Err("Unsupported convert mode".to_string()),
-    }
-}
-
-fn find_options(request: &ReplaceTextRequest) -> FindOptions {
-    FindOptions {
-        case_sensitive: request.case_sensitive,
-        whole_word: request.whole_word,
-        use_regex: request.use_regex,
     }
 }
