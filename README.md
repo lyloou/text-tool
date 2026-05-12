@@ -4,7 +4,7 @@ Language: English | [中文](README_ZH.md)
 
 TextTool is a small macOS text utility for turning line-based source text into copy-ready comma-separated values. It is built with Tauri, Rust, and React, with the text transformation logic kept in a tested Rust core crate.
 
-![TextTool app screenshot](docs/texttool-app.png)
+![TextTool app screenshot](docs/text-tool-app.png)
 
 ## Features
 

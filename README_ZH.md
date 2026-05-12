@@ -4,7 +4,7 @@
 
 TextTool 是一个 macOS 文本处理小工具，用来把按行输入的原始文本快速转换成可复制的逗号分隔结果。项目基于 Tauri、Rust 和 React 构建，核心文本处理逻辑放在带测试覆盖的 Rust crate 中。
 
-![TextTool 应用截图](docs/texttool-app-zh.png)
+![TextTool 应用截图](docs/text-tool-app-zh.png)
 
 ## 功能
 
