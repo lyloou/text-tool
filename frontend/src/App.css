@@ -184,65 +184,164 @@ h3 {
 }
 
 .settings-window {
-  --page: #e8ece8;
-  --panel: #f7f7f2;
-  --panel-strong: #eef0e9;
-  --panel-soft: #fbfbf6;
+  --page: #eef1ea;
+  --panel: #fbfaf4;
+  --panel-strong: #e7eadf;
+  --panel-soft: #fffefa;
   --text: #172027;
-  --muted: #66706f;
-  --line: #b9c2ba;
-  --line-strong: #8e9a94;
+  --muted: #626c68;
+  --line: #d7dccf;
+  --line-strong: #aeb8ab;
   --accent: #0f766d;
-  --accent-strong: #09584f;
-  --accent-soft: rgba(15, 118, 109, 0.13);
+  --accent-strong: #084e47;
+  --accent-soft: rgba(15, 118, 109, 0.14);
+  --warm-accent: #c76d42;
+  --panel-shadow: rgba(42, 55, 47, 0.12);
   min-height: 100vh;
   box-sizing: border-box;
-  padding: 22px;
+  padding: 24px;
   color: var(--text);
-  background: var(--page);
+  background:
+    linear-gradient(135deg, rgba(199, 109, 66, 0.11), transparent 34%),
+    radial-gradient(circle at 92% 10%, rgba(15, 118, 109, 0.16), transparent 28%),
+    var(--page);
 }
 
 .settings-window[data-theme='dark'] {
-  --page: #111614;
-  --panel: #1a211f;
-  --panel-strong: #202a27;
-  --panel-soft: #141b19;
+  --page: #101514;
+  --panel: #171e1c;
+  --panel-strong: #222c28;
+  --panel-soft: #111816;
   --text: #edf2ea;
-  --muted: #a0aaa3;
-  --line: #33403b;
-  --line-strong: #56675f;
+  --muted: #a7b2aa;
+  --line: #2f3b36;
+  --line-strong: #53645d;
   --accent: #67d4c3;
   --accent-strong: #9beadf;
-  --accent-soft: rgba(103, 212, 195, 0.15);
+  --accent-soft: rgba(103, 212, 195, 0.16);
+  --warm-accent: #f2a36f;
+  --panel-shadow: rgba(0, 0, 0, 0.34);
 }
 
 .settings-panel {
   display: grid;
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.settings-panel-header {
+  grid-column: 1 / -1;
+  padding: 4px 2px 2px;
 }
 
 .settings-panel-header h1 {
   margin: 0;
   color: var(--text);
-  font-size: 20px;
+  font-size: 24px;
+  line-height: 1.1;
   letter-spacing: 0;
 }
 
 .settings-panel h2 {
   margin: 0;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.2;
   letter-spacing: 0;
 }
 
+.settings-panel .settings-group {
+  min-width: 0;
+  align-content: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--panel-soft) 86%, transparent), transparent),
+    var(--panel);
+  box-shadow: 0 16px 34px var(--panel-shadow);
+}
+
+.settings-panel .settings-group + .settings-group {
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+}
+
+.settings-panel .settings-group h2::after {
+  content: '';
+  display: block;
+  width: 26px;
+  height: 2px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--warm-accent);
+}
+
 .settings-panel .sort-option-toggle {
-  min-height: 40px;
+  width: 100%;
+  min-height: 42px;
   justify-content: flex-start;
-  padding: 0 12px;
+  padding: 0 13px;
   border-color: var(--line);
   border-radius: 6px;
   background: var(--panel-soft);
+  color: var(--text);
   font-size: 13px;
+}
+
+.settings-panel .sort-option-toggle.active {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--line));
+  background: linear-gradient(180deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 48%, transparent));
+}
+
+.settings-panel .settings-row,
+.settings-panel .shortcut-row {
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-soft);
+}
+
+.settings-panel .settings-row > span,
+.settings-panel .shortcut-row > span {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.settings-panel .segmented-control,
+.settings-panel .language-switch {
+  background: color-mix(in srgb, var(--panel-strong) 78%, var(--panel-soft));
+}
+
+.settings-panel .segmented-control button.active,
+.settings-panel .language-switch button.active {
+  background: var(--accent);
+  color: #fffefa;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.settings-window[data-theme='dark'] .settings-panel .segmented-control button.active,
+.settings-window[data-theme='dark'] .settings-panel .language-switch button.active {
+  color: #071210;
+}
+
+.settings-panel .shortcut-row kbd {
+  border-color: color-mix(in srgb, var(--warm-accent) 44%, var(--line));
+  background: color-mix(in srgb, var(--warm-accent) 14%, var(--panel-soft));
+}
+
+@media (max-width: 620px) {
+  .settings-window {
+    padding: 18px;
+  }
+
+  .settings-panel {
+    grid-template-columns: 1fr;
+  }
 }
 
 .workspace-grid {
@@ -330,13 +429,6 @@ h3 {
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-}
-
-.icon-action-button {
-  width: 30px;
-  padding: 0;
-  font-size: 16px;
-  line-height: 1;
 }
 
 .sort-option-toggle {

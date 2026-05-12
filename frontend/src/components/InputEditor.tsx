@@ -1,4 +1,4 @@
-import { useRef, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 type InputEditorProps = {
   editorRef: RefObject<HTMLTextAreaElement | null>
@@ -8,6 +8,8 @@ type InputEditorProps = {
   softWrap: boolean
   findPanel: {
     expanded: boolean
+    mode: 'find' | 'replace'
+    focusVersion: number
     query: string
     replaceWith: string
     caseSensitive: boolean
@@ -44,12 +46,12 @@ type InputEditorProps = {
     resultCount: (active: number, total: number) => string
   }
   onChange: (value: string) => void
-  onOpenFind: () => void
   onCloseFind: () => void
   onFindPanelChange: (values: Partial<InputEditorProps['findPanel']>) => void
   onFindPrevious: () => void
   onFindNext: () => void
   onReplaceCurrent: () => void
+  onReplaceCurrentAndFindNext: () => void
   onReplaceAll: () => void
   onNumericSortChange: (value: boolean) => void
   onCopySource: () => void
@@ -71,12 +73,12 @@ function InputEditor({
   findPanel,
   text,
   onChange,
-  onOpenFind,
   onCloseFind,
   onFindPanelChange,
   onFindPrevious,
   onFindNext,
   onReplaceCurrent,
+  onReplaceCurrentAndFindNext,
   onReplaceAll,
   onNumericSortChange,
   onCopySource,
@@ -89,9 +91,21 @@ function InputEditor({
   onCommaValuesToLines,
 }: InputEditorProps) {
   const lineNumbersRef = useRef<HTMLDivElement>(null)
+  const findInputRef = useRef<HTMLInputElement>(null)
   const lineNumbers = value.split('\n').map((_, index) => index + 1)
   const hasMatches = findPanel.matches.length > 0
   const activeMatchNumber = hasMatches ? findPanel.activeMatchIndex + 1 : 0
+
+  useEffect(() => {
+    if (!findPanel.expanded) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      findInputRef.current?.focus()
+      findInputRef.current?.select()
+    })
+  }, [findPanel.expanded, findPanel.focusVersion])
 
   function handleScroll(event: React.UIEvent<HTMLTextAreaElement>) {
     if (lineNumbersRef.current) {
@@ -112,6 +126,26 @@ function InputEditor({
     if (event.detail === 0) {
       action()
     }
+  }
+
+  function handleFindKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') {
+      return
+    }
+
+    event.preventDefault()
+
+    if (event.shiftKey) {
+      onFindPrevious()
+      return
+    }
+
+    if (findPanel.mode === 'replace') {
+      onReplaceCurrentAndFindNext()
+      return
+    }
+
+    onFindNext()
   }
 
   return (
@@ -149,16 +183,6 @@ function InputEditor({
             </button>
           </div>
           <div className="line-transform-group">
-            <button
-              className="line-action-button icon-action-button"
-              type="button"
-              title={text.openFind}
-              aria-label={text.openFind}
-              onPointerDown={(event) => runToolbarAction(event, onOpenFind)}
-              onClick={(event) => runKeyboardAction(event, onOpenFind)}
-            >
-              ⌕
-            </button>
             <button
               className="line-action-button"
               type="button"
@@ -245,11 +269,12 @@ function InputEditor({
           <div className="find-replace-panel" role="search" aria-label={text.openFind}>
             <div className="find-row">
               <input
+                ref={findInputRef}
                 className="find-input"
                 value={findPanel.query}
                 onChange={(event) => onFindPanelChange({ query: event.target.value })}
+                onKeyDown={handleFindKeyDown}
                 placeholder={text.find}
-                autoFocus
               />
               <div className="find-match-count" aria-live="polite">
                 {findPanel.error
@@ -258,30 +283,51 @@ function InputEditor({
                     ? text.resultCount(activeMatchNumber, findPanel.matches.length)
                     : text.noResults}
               </div>
-              <button className="find-icon-button" type="button" title={text.previousMatch} onClick={onFindPrevious}>
+              <button
+                className="find-icon-button"
+                type="button"
+                tabIndex={-1}
+                title={text.previousMatch}
+                onClick={onFindPrevious}
+              >
                 ↑
               </button>
-              <button className="find-icon-button" type="button" title={text.nextMatch} onClick={onFindNext}>
+              <button
+                className="find-icon-button"
+                type="button"
+                tabIndex={-1}
+                title={text.nextMatch}
+                onClick={onFindNext}
+              >
                 ↓
               </button>
-              <button className="find-icon-button" type="button" title={text.closeFind} onClick={onCloseFind}>
+              <button
+                className="find-icon-button"
+                type="button"
+                tabIndex={-1}
+                title={text.closeFind}
+                onClick={onCloseFind}
+              >
                 ×
               </button>
             </div>
-            <div className="find-row">
-              <input
-                className="find-input"
-                value={findPanel.replaceWith}
-                onChange={(event) => onFindPanelChange({ replaceWith: event.target.value })}
-                placeholder={text.replace}
-              />
-              <button className="find-text-button" type="button" disabled={!hasMatches} onClick={onReplaceCurrent}>
-                {text.replaceCurrent}
-              </button>
-              <button className="find-text-button" type="button" disabled={!hasMatches} onClick={onReplaceAll}>
-                {text.replaceAll}
-              </button>
-            </div>
+            {findPanel.mode === 'replace' ? (
+              <div className="find-row">
+                <input
+                  className="find-input"
+                  value={findPanel.replaceWith}
+                  onChange={(event) => onFindPanelChange({ replaceWith: event.target.value })}
+                  onKeyDown={handleFindKeyDown}
+                  placeholder={text.replace}
+                />
+                <button className="find-text-button" type="button" disabled={!hasMatches} onClick={onReplaceCurrent}>
+                  {text.replaceCurrent}
+                </button>
+                <button className="find-text-button" type="button" disabled={!hasMatches} onClick={onReplaceAll}>
+                  {text.replaceAll}
+                </button>
+              </div>
+            ) : null}
             <div className="find-options">
               <button
                 className={findPanel.caseSensitive ? 'find-option active' : 'find-option'}

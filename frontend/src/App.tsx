@@ -39,6 +39,8 @@ type StatusKey =
 
 type FindPanelState = {
   expanded: boolean
+  mode: 'find' | 'replace'
+  focusVersion: number
   query: string
   replaceWith: string
   caseSensitive: boolean
@@ -55,6 +57,8 @@ const isSettingsWindow =
   typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('window') === 'settings'
 const defaultFindPanel: FindPanelState = {
   expanded: false,
+  mode: 'find',
+  focusVersion: 0,
   query: '',
   replaceWith: '',
   caseSensitive: false,
@@ -360,9 +364,17 @@ function App() {
         return
       }
 
-      if (event.key.toLowerCase() === 'f') {
+      const key = event.key.toLowerCase()
+
+      if (key === 'f') {
         event.preventDefault()
-        openFindPanel()
+        openFindPanel('find')
+        return
+      }
+
+      if (key === 'r') {
+        event.preventDefault()
+        openFindPanel('replace')
       }
     }
 
@@ -447,12 +459,14 @@ function App() {
     return editor.value.slice(editor.selectionStart, editor.selectionEnd)
   }
 
-  function openFindPanel() {
+  function openFindPanel(mode: FindPanelState['mode']) {
     const selectedText = getSelectedText()
 
     setFindPanel((current) => ({
       ...current,
       expanded: true,
+      mode,
+      focusVersion: current.focusVersion + 1,
       query: selectedText || current.query,
       error: '',
     }))
@@ -521,7 +535,7 @@ function App() {
 
   async function handleReplaceCurrent() {
     if (!findPanel.query) {
-      return
+      return null
     }
 
     try {
@@ -533,8 +547,36 @@ function App() {
 
       updateSourceText(nextText)
       setStatus('replaced')
+      return {
+        nextText,
+        replacedAt: activeMatch?.start ?? 0,
+      }
     } catch (error) {
       updateFindPanel({ error: error instanceof Error ? error.message : String(error) })
+      return null
+    }
+  }
+
+  async function handleReplaceCurrentAndFindNext() {
+    const result = await handleReplaceCurrent()
+
+    if (!result) {
+      return
+    }
+
+    const matches = await findMatches(result.nextText, findPanel.query, getFindOptions(findPanel)).then((value) => value.matches)
+    const nextIndex = matches.findIndex((match) => match.start > result.replacedAt)
+    const activeMatchIndex = nextIndex >= 0 ? nextIndex : getNextActiveMatchIndex(matches, -1)
+
+    setFindPanel((current) => ({
+      ...current,
+      matches,
+      activeMatchIndex,
+      error: '',
+    }))
+
+    if (activeMatchIndex >= 0) {
+      selectMatch(matches[activeMatchIndex])
     }
   }
 
@@ -652,12 +694,12 @@ function App() {
             findPanel={findPanel}
             text={inputText[language]}
             onChange={updateSourceText}
-            onOpenFind={openFindPanel}
             onCloseFind={closeFindPanel}
             onFindPanelChange={updateFindPanel}
             onFindPrevious={() => selectRelativeMatch(-1)}
             onFindNext={() => selectRelativeMatch(1)}
             onReplaceCurrent={() => void handleReplaceCurrent()}
+            onReplaceCurrentAndFindNext={() => void handleReplaceCurrentAndFindNext()}
             onReplaceAll={() => void handleReplaceAll()}
             onNumericSortChange={setNumericSort}
             onCopySource={() => void handleCopySource()}
