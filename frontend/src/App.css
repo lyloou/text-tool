@@ -6,7 +6,6 @@
 
 .app-shell {
   --page: #e8ece8;
-  --page-grid: rgba(23, 32, 39, 0.06);
   --panel: #f7f7f2;
   --panel-strong: #eef0e9;
   --panel-soft: #fbfbf6;
@@ -20,7 +19,6 @@
   --button: #ffffff;
   --button-text: #233039;
   --editor: #fbfbf6;
-  --editor-line: rgba(15, 118, 109, 0.09);
   --editor-text: #172027;
   --editor-caret: #0f766d;
   --result: #f0f2ec;
@@ -35,16 +33,12 @@
   gap: 12px;
   color: var(--text);
   background:
-    linear-gradient(90deg, var(--page-grid) 1px, transparent 1px),
-    linear-gradient(0deg, var(--page-grid) 1px, transparent 1px),
     radial-gradient(circle at 18% 0%, rgba(15, 118, 109, 0.12), transparent 30%),
     var(--page);
-  background-size: 32px 32px, 32px 32px, auto, auto;
 }
 
 .app-shell[data-theme='dark'] {
   --page: #111614;
-  --page-grid: rgba(222, 232, 220, 0.055);
   --panel: #1a211f;
   --panel-strong: #202a27;
   --panel-soft: #141b19;
@@ -58,7 +52,6 @@
   --button: #202a27;
   --button-text: #edf2ea;
   --editor: #070b0d;
-  --editor-line: rgba(103, 212, 195, 0.08);
   --editor-text: #d7e5df;
   --editor-caret: #ffd166;
   --result: #111816;
@@ -486,10 +479,7 @@ input:focus,
   resize: none;
   border: 0;
   border-radius: 0;
-  background:
-    linear-gradient(90deg, var(--editor-line) 1px, transparent 1px),
-    var(--editor);
-  background-size: 72px 100%;
+  background: var(--editor);
   color: var(--editor-text);
   caret-color: var(--editor-caret);
   box-shadow: none;
