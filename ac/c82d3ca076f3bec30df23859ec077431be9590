@@ -1,0 +1,23 @@
+crates/text_core/src/lib.rs
+  s_d4e735724f612b::t_66134db39dfb63 56,83-87
+  s_d4e735724f612b::t_dc4f22f05612c1 53-55
+  s_d4e735724f612b::t_4c9be3ab7d0424 57
+  s_d4e735724f612b::t_a1151be317262f 82
+  s_d4e735724f612b::t_665830d1ed84f6 12,17-19,46-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "acc82d3ca076f3bec30df23859ec077431be9590",
+  "prompts": {},
+  "sessions": {
+    "s_d4e735724f612b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3b51-aea7-73c1-aaaf-0d9c76ef6273",
+        "model": "gpt-5.5"
+      },
+      "human_author": "lilou <lyloou@qq.com>"
+    }
+  }
+}
