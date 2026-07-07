@@ -4,9 +4,9 @@ mod commands;
 mod preferences;
 
 use commands::{
-    comma_values_to_lines_command, convert_lines_command, deduplicate_lines_command,
-    find_matches_command, replace_all_command, replace_first_command, sort_lines_ascending_command,
-    sort_lines_descending_command,
+    comma_values_to_lines_command, convert_all_formats_command, convert_lines_command,
+    deduplicate_lines_command, find_matches_command, replace_all_command, replace_first_command,
+    sort_lines_ascending_command, sort_lines_descending_command,
 };
 use preferences::{load_preferences_command, save_preferences_command};
 use tauri::{
@@ -41,6 +41,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             convert_lines_command,
+            convert_all_formats_command,
             deduplicate_lines_command,
             sort_lines_ascending_command,
             sort_lines_descending_command,

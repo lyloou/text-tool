@@ -184,6 +184,7 @@ function App() {
   const wrapWithParenthesesRef = useRef(false)
   const numericSortRef = useRef(false)
   const statusRef = useRef<StatusKey>('ready')
+  const convertFrameRef = useRef<number | null>(null)
   const language = preferences.appearance.language
   const theme = preferences.appearance.theme
   const t = messages[language]
@@ -218,9 +219,26 @@ function App() {
 
   useEffect(() => {
     if (resultPanelExpanded) {
-      void runConvert(sourceText)
+      scheduleConvert(sourceText)
     }
   }, [sourceText, ignoreEmptyLines, wrapWithParentheses, resultPanelExpanded])
+
+  useEffect(() => {
+    return () => {
+      if (convertFrameRef.current !== null) {
+        window.cancelAnimationFrame(convertFrameRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isSettingsWindow) {
+      return
+    }
+
+    const frame = window.requestAnimationFrame(focusEditor)
+    return () => window.cancelAnimationFrame(frame)
+  }, [])
 
   useEffect(() => {
     window.localStorage.setItem(resultPanelStorageKey, String(resultPanelExpanded))
@@ -439,6 +457,17 @@ function App() {
     const outputs = await convertAllFormats(nextSourceText, ignoreEmptyLines, wrapWithParentheses)
     setResultOutputs(outputs)
     setStatus('converted')
+  }
+
+  function scheduleConvert(nextSourceText = sourceText) {
+    if (convertFrameRef.current !== null) {
+      window.cancelAnimationFrame(convertFrameRef.current)
+    }
+
+    convertFrameRef.current = window.requestAnimationFrame(() => {
+      convertFrameRef.current = null
+      void runConvert(nextSourceText)
+    })
   }
 
   function updateEditorPreference(option: keyof typeof preferences.editor, value: boolean) {

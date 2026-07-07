@@ -9,14 +9,14 @@ pub use reorder::{
 };
 pub use replace::{replace_all, replace_first, replace_text};
 pub use search::{FindOptions, SearchMatch, search_matches};
-pub use transform::{ConvertMode, convert_lines};
+pub use transform::{ConvertMode, ConvertedLines, convert_all_formats, convert_lines};
 
 #[cfg(test)]
 mod tests {
     use super::{
-        ConvertMode, SearchMatch, comma_values_to_lines, convert_lines, deduplicate_lines,
-        FindOptions, replace_all, replace_first, replace_text, reverse_lines, search_matches,
-        sort_lines_ascending, sort_lines_descending,
+        ConvertMode, SearchMatch, comma_values_to_lines, convert_all_formats, convert_lines,
+        deduplicate_lines, FindOptions, replace_all, replace_first, replace_text, reverse_lines,
+        search_matches, sort_lines_ascending, sort_lines_descending,
     };
 
     #[test]
@@ -44,6 +44,18 @@ mod tests {
     }
 
     #[test]
+    fn converts_all_formats_in_fixed_order() {
+        let output = convert_all_formats("line1\nline2", true, false);
+
+        assert_eq!(output[0].mode, ConvertMode::DoubleQuoted);
+        assert_eq!(output[0].output, "\"line1\",\"line2\"");
+        assert_eq!(output[1].mode, ConvertMode::SingleQuoted);
+        assert_eq!(output[1].output, "'line1','line2'");
+        assert_eq!(output[2].mode, ConvertMode::Plain);
+        assert_eq!(output[2].output, "line1,line2");
+    }
+
+    #[test]
     fn replaces_plain_text() {
         let output = replace_text("alpha beta alpha", "alpha", "omega");
         assert_eq!(output, "omega beta omega");
@@ -65,6 +77,12 @@ mod tests {
     fn deduplicates_lines_and_keeps_first_occurrence_order() {
         let output = deduplicate_lines("beta\nalpha\nbeta\n\nalpha\n");
         assert_eq!(output, "beta\nalpha\n");
+    }
+
+    #[test]
+    fn deduplicates_empty_lines_as_lines() {
+        let output = deduplicate_lines("alpha\n\nbeta\n\n");
+        assert_eq!(output, "alpha\n\nbeta");
     }
 
     #[test]

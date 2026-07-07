@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 use text_core::{
-    comma_values_to_lines, convert_lines, deduplicate_lines, replace_all, replace_first,
-    search_matches, sort_lines_ascending, sort_lines_descending, ConvertMode, FindOptions,
-    SearchMatch,
+    comma_values_to_lines, convert_all_formats, convert_lines, deduplicate_lines, replace_all,
+    replace_first, search_matches, sort_lines_ascending, sort_lines_descending, ConvertMode,
+    FindOptions, SearchMatch,
 };
 
 #[derive(Debug, Deserialize)]
@@ -10,6 +10,14 @@ use text_core::{
 pub struct ConvertLinesRequest {
     pub input: String,
     pub mode: String,
+    pub ignore_empty_lines: bool,
+    pub wrap_with_parentheses: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConvertAllFormatsRequest {
+    pub input: String,
     pub ignore_empty_lines: bool,
     pub wrap_with_parentheses: bool,
 }
@@ -60,6 +68,19 @@ pub struct ConvertLinesResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ConvertAllFormatsResponse {
+    pub outputs: Vec<ConvertFormatResponse>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConvertFormatResponse {
+    pub format: String,
+    pub output: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LineOperationResponse {
     pub output: String,
 }
@@ -80,6 +101,23 @@ pub fn convert_lines_command(request: ConvertLinesRequest) -> Result<ConvertLine
         request.wrap_with_parentheses,
     );
     Ok(ConvertLinesResponse { output })
+}
+
+#[tauri::command]
+pub fn convert_all_formats_command(request: ConvertAllFormatsRequest) -> ConvertAllFormatsResponse {
+    let outputs = convert_all_formats(
+        &request.input,
+        request.ignore_empty_lines,
+        request.wrap_with_parentheses,
+    )
+    .into_iter()
+    .map(|converted| ConvertFormatResponse {
+        format: format_key(converted.mode).to_string(),
+        output: converted.output,
+    })
+    .collect();
+
+    ConvertAllFormatsResponse { outputs }
 }
 
 #[tauri::command]
@@ -140,6 +178,14 @@ fn parse_mode(value: &str) -> Result<ConvertMode, String> {
         "single" => Ok(ConvertMode::SingleQuoted),
         "plain" => Ok(ConvertMode::Plain),
         _ => Err("Unsupported convert mode".to_string()),
+    }
+}
+
+fn format_key(mode: ConvertMode) -> &'static str {
+    match mode {
+        ConvertMode::DoubleQuoted => "double",
+        ConvertMode::SingleQuoted => "single",
+        ConvertMode::Plain => "plain",
     }
 }
 

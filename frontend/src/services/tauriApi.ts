@@ -49,43 +49,32 @@ const resultFormats: Array<{ format: ConvertMode; label: string }> = [
   { format: 'plain', label: '纯逗号格式' },
 ]
 
-export async function convertLines(
-  input: string,
-  mode: ConvertMode,
-  ignoreEmptyLines: boolean,
-  wrapWithParentheses: boolean,
-) {
-  if (!isTauriRuntime) {
-    return { output: convertLinesLocal(input, mode, ignoreEmptyLines, wrapWithParentheses) }
-  }
-
-  return invoke<{ output: string }>('convert_lines_command', {
-    request: {
-      input,
-      mode,
-      ignoreEmptyLines,
-      wrapWithParentheses,
-    },
-  })
-}
-
 export async function convertAllFormats(
   input: string,
   ignoreEmptyLines: boolean,
   wrapWithParentheses: boolean,
 ): Promise<ResultOutput[]> {
-  const outputs = await Promise.all(
-    resultFormats.map(async ({ format, label }) => {
-      const result = await convertLines(input, format, ignoreEmptyLines, wrapWithParentheses)
-      return {
-        format,
-        label,
-        output: result.output,
-      }
-    }),
-  )
+  if (!isTauriRuntime) {
+    return resultFormats.map(({ format, label }) => ({
+      format,
+      label,
+      output: convertLinesLocal(input, format, ignoreEmptyLines, wrapWithParentheses),
+    }))
+  }
 
-  return outputs
+  const result = await invoke<{ outputs: Array<{ format: ConvertMode; output: string }> }>('convert_all_formats_command', {
+    request: {
+      input,
+      ignoreEmptyLines,
+      wrapWithParentheses,
+    },
+  })
+
+  return result.outputs.map(({ format, output }) => ({
+    format,
+    label: resultFormats.find((item) => item.format === format)?.label ?? format,
+    output,
+  }))
 }
 
 export async function deduplicateLines(input: string) {
