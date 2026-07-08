@@ -1,0 +1,25 @@
+frontend/src/components/InputEditor.tsx
+  s_396c7e92e63a71::t_1c11ffd89aac65 2,176,178,181-182,184,187-188,192,198-199,203,209,212,214,217-218,220,223-224,226,229,233,235,238-239,241,244-245,247,250
+frontend/src/components/ResultView.tsx
+  s_396c7e92e63a71::t_2908e7560b17f6 3,77,80,83,85,87,90
+AGENTS.md
+  s_396c7e92e63a71::t_4c1137432c905a 48,103-110
+frontend/src/components/ActionButton.tsx
+  s_396c7e92e63a71::t_cb1d87c404fa85 1-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "fd6c191b268dfd54b8fc0c956855ad24e6e128e5",
+  "prompts": {},
+  "sessions": {
+    "s_396c7e92e63a71": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f404c-01f1-7dc0-9a32-933c038bb894",
+        "model": "gpt-5.5"
+      },
+      "human_author": "lilou <lyloou@qq.com>"
+    }
+  }
+}
