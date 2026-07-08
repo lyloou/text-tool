@@ -1,0 +1,37 @@
+frontend/src/App.css
+  s_2e0bbd2796eed7::t_3702c0ac17dee1 766-772,774-775,783-787,799-809,931
+  s_2e0bbd2796eed7::t_27235aba04c6c2 932-934
+frontend/src/components/ResultView.tsx
+  s_2e0bbd2796eed7::t_dae451fbc231df 1,13,15,33-34,89-94,97-100,107-109,111
+  s_2e0bbd2796eed7::t_c55f3a4eed8ae6 35-53,95-96,101-106
+frontend/src/services/tauriApi.ts
+  s_2e0bbd2796eed7::t_57237cb8dbc900 36
+frontend/src/App.tsx
+  s_2e0bbd2796eed7::t_976d621c9fe891 176,526-529,744,753,759,765,771,777,782,800,843
+  s_2e0bbd2796eed7::t_7de51c378f0525 1101,1103,1113,1115
+  s_2e0bbd2796eed7::t_f872c5dd674dc6 1048,1075
+  s_2e0bbd2796eed7::t_da18adc5827308 859
+frontend/src/components/InputEditor.tsx
+  s_2e0bbd2796eed7::t_e57ab86f557634 32,59,88,206-216
+  s_2e0bbd2796eed7::t_cba88676f8fe74 115,137,143
+  s_2e0bbd2796eed7::t_8f00f640e112fe 5,72,116-119,132-136
+  s_2e0bbd2796eed7::t_8b9a0d85e0561c 120,123,128-131,141
+  s_2e0bbd2796eed7::t_5689b8ebb021ae 121-122,124-127,138-140,142,309
+  s_2e0bbd2796eed7::t_e1ccf5461d8958 217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "5b6ae2cacc34c8596095716e35cacc56904c9fe8",
+  "prompts": {},
+  "sessions": {
+    "s_2e0bbd2796eed7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3fda-9c43-7b83-b32f-f9fa8a1ba2dc",
+        "model": "gpt-5.5"
+      },
+      "human_author": "lilou <lyloou@qq.com>"
+    }
+  }
+}
