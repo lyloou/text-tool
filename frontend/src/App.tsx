@@ -173,6 +173,7 @@ function App() {
   })
   const [numericSort, setNumericSort] = useState(false)
   const [resultOutputs, setResultOutputs] = useState<ResultOutput[]>([])
+  const [editorResetVersion, setEditorResetVersion] = useState(0)
   const [findPanel, setFindPanel] = useState<FindPanelState>(defaultFindPanel)
   const [status, setStatus] = useState<StatusKey>('ready')
   const [toastMessage, setToastMessage] = useState('')
@@ -522,6 +523,10 @@ function App() {
     editorRef.current?.focus()
   }
 
+  function resetEditorViewport() {
+    setEditorResetVersion((current) => current + 1)
+  }
+
   function getCurrentSourceText() {
     return editorRef.current?.value ?? sourceTextRef.current
   }
@@ -736,6 +741,7 @@ function App() {
     try {
       const result = await replaceAll(getCurrentSourceText(), findPanel.query, findPanel.replaceWith, getFindOptions(findPanel))
       updateUndoableState({ sourceText: result.output, status: 'replaced' })
+      resetEditorViewport()
     } catch (error) {
       updateFindPanel({ error: error instanceof Error ? error.message : String(error) })
     }
@@ -744,30 +750,36 @@ function App() {
   async function handleReverseLines() {
     const reversedText = reverseLinesLocal(getCurrentSourceText())
     updateUndoableState({ sourceText: reversedText, status: 'reversed' })
+    resetEditorViewport()
   }
 
   async function handleDeduplicateLines() {
     const result = await deduplicateLines(getCurrentSourceText())
     updateUndoableState({ sourceText: result.output, status: 'deduplicated' })
+    resetEditorViewport()
   }
 
   async function handleSortLines() {
     const result = await sortLinesAscending(getCurrentSourceText(), numericSort)
     updateUndoableState({ sourceText: result.output, status: 'sorted' })
+    resetEditorViewport()
   }
 
   async function handleSortLinesDescending() {
     const result = await sortLinesDescending(getCurrentSourceText(), numericSort)
     updateUndoableState({ sourceText: result.output, status: 'sorted' })
+    resetEditorViewport()
   }
 
   async function handleCommaValuesToLines() {
     const result = await commaValuesToLines(getCurrentSourceText())
     updateUndoableState({ sourceText: result.output, status: 'commaToLines' })
+    resetEditorViewport()
   }
 
   async function handleClearSource() {
     updateUndoableState({ sourceText: '', status: 'cleared' })
+    resetEditorViewport()
   }
 
   async function handleCopySource() {
@@ -785,6 +797,7 @@ function App() {
   async function handlePasteSource() {
     const text = await readClipboardText()
     updateUndoableState({ sourceText: text, status: 'pasted' })
+    resetEditorViewport()
   }
 
   async function handleCopy(output: string) {
@@ -827,6 +840,7 @@ function App() {
         <div className="workbench-column source-column">
           <InputEditor
             editorRef={editorRef}
+            editorResetVersion={editorResetVersion}
             value={sourceText}
             numericSort={numericSort}
             showLineNumbers={preferences.editor.showLineNumbers}
@@ -842,6 +856,7 @@ function App() {
             onReplaceCurrentAndFindNext={() => void handleReplaceCurrentAndFindNext()}
             onReplaceAll={() => void handleReplaceAll()}
             onNumericSortChange={(value) => updateUndoableState({ numericSort: value })}
+            onSoftWrapChange={(value) => updateEditorPreference('softWrap', value)}
             onCopySource={() => void handleCopySource()}
             onClearSource={() => void handleClearSource()}
             onPasteSource={() => void handlePasteSource()}
@@ -1030,6 +1045,7 @@ const inputText = {
     deduplicateLines: '去重',
     sortLines: '升序',
     sortLinesDescending: '降序',
+    softWrap: '自动换行',
     numericSort: '数字排序',
     commaToLines: '逗号转行',
     placeholder: '请输入内容',
@@ -1056,6 +1072,7 @@ const inputText = {
     deduplicateLines: 'Deduplicate',
     sortLines: 'Sort',
     sortLinesDescending: 'Reverse sort',
+    softWrap: 'Soft wrap',
     numericSort: 'Numeric sort',
     commaToLines: 'Comma to lines',
     placeholder: 'Enter content',
@@ -1081,7 +1098,9 @@ const resultText = {
     ignoreEmptyLines: '忽略空行',
     wrapWithParentheses: '添加括号',
     copy: '复制',
+    collapse: '收起',
     empty: '转换结果会显示在这里。',
+    expand: '展开',
     hideResults: '隐藏转换区',
     showResults: '展开转换区',
     visibility: '转换区显示',
@@ -1091,7 +1110,9 @@ const resultText = {
     ignoreEmptyLines: 'Ignore empty lines',
     wrapWithParentheses: 'Add parentheses',
     copy: 'Copy',
+    collapse: 'Collapse',
     empty: 'Conversion results appear here.',
+    expand: 'Expand',
     hideResults: 'Hide conversion area',
     showResults: 'Show conversion area',
     visibility: 'Conversion area visibility',

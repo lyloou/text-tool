@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { ResultOutput } from '../services/tauriApi'
 
 type ResultViewProps = {
@@ -9,7 +10,9 @@ type ResultViewProps = {
     ignoreEmptyLines: string
     wrapWithParentheses: string
     copy: string
+    collapse: string
     empty: string
+    expand: string
   }
   formatLabels: Record<ResultOutput['format'], string>
   onIgnoreEmptyLinesChange: (value: boolean) => void
@@ -27,6 +30,27 @@ function ResultView({
   onWrapWithParenthesesChange,
   onCopy,
 }: ResultViewProps) {
+  const [expandedFormat, setExpandedFormat] = useState<ResultOutput['format'] | null>(null)
+
+  function runButtonAction(event: React.PointerEvent<HTMLButtonElement>, action: () => void) {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return
+    }
+
+    event.preventDefault()
+    action()
+  }
+
+  function runKeyboardAction(event: React.MouseEvent<HTMLButtonElement>, action: () => void) {
+    if (event.detail === 0) {
+      action()
+    }
+  }
+
+  function toggleExpandedFormat(format: ResultOutput['format']) {
+    setExpandedFormat((current) => (current === format ? null : format))
+  }
+
   return (
     <section className="result-panel workbench-panel">
       <div className="panel-header result-header">
@@ -62,11 +86,29 @@ function ResultView({
               <div>
                 <h3>{formatLabels[item.format]}</h3>
               </div>
-              <button className="secondary-button" type="button" onClick={() => onCopy(item.output)}>
-                {text.copy}
-              </button>
+              <div className="result-card-actions">
+                {item.output ? (
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    aria-expanded={expandedFormat === item.format}
+                    onPointerDown={(event) => runButtonAction(event, () => toggleExpandedFormat(item.format))}
+                    onClick={(event) => runKeyboardAction(event, () => toggleExpandedFormat(item.format))}
+                  >
+                    {expandedFormat === item.format ? text.collapse : text.expand}
+                  </button>
+                ) : null}
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onPointerDown={(event) => runButtonAction(event, () => onCopy(item.output))}
+                  onClick={(event) => runKeyboardAction(event, () => onCopy(item.output))}
+                >
+                  {text.copy}
+                </button>
+              </div>
             </div>
-            <div className="result-surface">
+            <div className={expandedFormat === item.format ? 'result-surface expanded' : 'result-surface'}>
               {item.output ? (
                 <p className="result-text" title={item.output}>
                   {item.output}

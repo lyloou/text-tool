@@ -33,7 +33,7 @@ export type Preferences = {
 export const defaultPreferences: Preferences = {
   editor: {
     showLineNumbers: true,
-    softWrap: true,
+    softWrap: false,
   },
   appearance: {
     theme: 'light',

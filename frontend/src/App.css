@@ -763,13 +763,26 @@ input:focus,
   align-items: center;
 }
 
+.result-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
 .result-surface {
-  min-height: 38px;
+  min-height: 58px;
+  max-height: 68px;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 8px 10px;
   background: var(--result);
+}
+
+.result-surface.expanded {
+  max-height: min(45vh, 420px);
+  overflow: auto;
 }
 
 .result-text,
@@ -783,8 +796,17 @@ input:focus,
 
 .result-text {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.result-surface.expanded .result-text {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
 }
 
 .empty-state {
@@ -903,6 +925,10 @@ input:focus,
   .primary-button,
   .secondary-button,
   .line-action-button {
+    width: 100%;
+  }
+
+  .result-card-actions {
     width: 100%;
   }
 

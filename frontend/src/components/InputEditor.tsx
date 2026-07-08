@@ -2,6 +2,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 
 type InputEditorProps = {
   editorRef: RefObject<HTMLTextAreaElement | null>
+  editorResetVersion: number
   value: string
   numericSort: boolean
   showLineNumbers: boolean
@@ -28,6 +29,7 @@ type InputEditorProps = {
     deduplicateLines: string
     sortLines: string
     sortLinesDescending: string
+    softWrap: string
     numericSort: string
     commaToLines: string
     placeholder: string
@@ -54,6 +56,7 @@ type InputEditorProps = {
   onReplaceCurrentAndFindNext: () => void
   onReplaceAll: () => void
   onNumericSortChange: (value: boolean) => void
+  onSoftWrapChange: (value: boolean) => void
   onCopySource: () => void
   onClearSource: () => void
   onPasteSource: () => void
@@ -66,6 +69,7 @@ type InputEditorProps = {
 
 function InputEditor({
   editorRef,
+  editorResetVersion,
   value,
   numericSort,
   showLineNumbers,
@@ -81,6 +85,7 @@ function InputEditor({
   onReplaceCurrentAndFindNext,
   onReplaceAll,
   onNumericSortChange,
+  onSoftWrapChange,
   onCopySource,
   onClearSource,
   onPasteSource,
@@ -106,6 +111,35 @@ function InputEditor({
       findInputRef.current?.select()
     })
   }, [findPanel.expanded, findPanel.focusVersion])
+
+  useEffect(() => {
+    if (!editorResetVersion || !editorRef.current) {
+      return
+    }
+
+    resetEditorViewport(true)
+  }, [editorResetVersion, editorRef])
+
+  function resetEditorViewport(shouldMoveCursor: boolean) {
+    if (!editorRef.current) {
+      return
+    }
+
+    if (shouldMoveCursor) {
+      editorRef.current.setSelectionRange(0, 0)
+    }
+
+    editorRef.current.scrollLeft = 0
+    editorRef.current.scrollTop = 0
+
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = 0
+    }
+  }
+
+  function handlePaste() {
+    window.requestAnimationFrame(() => resetEditorViewport(false))
+  }
 
   function handleScroll(event: React.UIEvent<HTMLTextAreaElement>) {
     if (lineNumbersRef.current) {
@@ -168,6 +202,18 @@ function InputEditor({
               onClick={(event) => runKeyboardAction(event, onSortLinesDescending)}
             >
               {text.sortLinesDescending}
+            </button>
+            <button
+              className={softWrap ? 'sort-option-toggle active' : 'sort-option-toggle'}
+              type="button"
+              aria-pressed={softWrap}
+              aria-label={text.softWrap}
+              onClick={() => onSoftWrapChange(!softWrap)}
+            >
+              <span className="toggle-track" aria-hidden="true">
+                <span className="toggle-thumb" />
+              </span>
+              <span>{text.softWrap}</span>
             </button>
             <button
               className={numericSort ? 'sort-option-toggle active' : 'sort-option-toggle'}
@@ -260,6 +306,7 @@ function InputEditor({
             .join(' ')}
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          onPaste={handlePaste}
           onScroll={handleScroll}
           placeholder={text.placeholder}
           spellCheck={false}
