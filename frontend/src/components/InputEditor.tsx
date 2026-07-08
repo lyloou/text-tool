@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
+import ActionButton from './ActionButton'
 
 type InputEditorProps = {
   editorRef: RefObject<HTMLTextAreaElement | null>
@@ -147,21 +148,6 @@ function InputEditor({
     }
   }
 
-  function runToolbarAction(event: React.PointerEvent<HTMLButtonElement>, action: () => void) {
-    if (event.pointerType === 'mouse' && event.button !== 0) {
-      return
-    }
-
-    event.preventDefault()
-    action()
-  }
-
-  function runKeyboardAction(event: React.MouseEvent<HTMLButtonElement>, action: () => void) {
-    if (event.detail === 0) {
-      action()
-    }
-  }
-
   function handleFindKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') {
       return
@@ -187,99 +173,81 @@ function InputEditor({
       <div className="editor-toolbar" aria-label={text.lineTools}>
         <div className="line-action-bar">
           <div className="sort-action-group">
-            <button
+            <ActionButton
               className="line-action-button"
-              type="button"
-              onPointerDown={(event) => runToolbarAction(event, onSortLines)}
-              onClick={(event) => runKeyboardAction(event, onSortLines)}
+              onAction={onSortLines}
             >
               {text.sortLines}
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               className="line-action-button"
-              type="button"
-              onPointerDown={(event) => runToolbarAction(event, onSortLinesDescending)}
-              onClick={(event) => runKeyboardAction(event, onSortLinesDescending)}
+              onAction={onSortLinesDescending}
             >
               {text.sortLinesDescending}
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               className={softWrap ? 'sort-option-toggle active' : 'sort-option-toggle'}
-              type="button"
               aria-pressed={softWrap}
               aria-label={text.softWrap}
-              onClick={() => onSoftWrapChange(!softWrap)}
+              onAction={() => onSoftWrapChange(!softWrap)}
             >
               <span className="toggle-track" aria-hidden="true">
                 <span className="toggle-thumb" />
               </span>
               <span>{text.softWrap}</span>
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               className={numericSort ? 'sort-option-toggle active' : 'sort-option-toggle'}
-              type="button"
               aria-pressed={numericSort}
               aria-label={text.numericSort}
-              onClick={() => onNumericSortChange(!numericSort)}
+              onAction={() => onNumericSortChange(!numericSort)}
             >
               <span className="toggle-track" aria-hidden="true">
                 <span className="toggle-thumb" />
               </span>
               <span>{text.numericSort}</span>
-            </button>
+            </ActionButton>
           </div>
           <div className="line-transform-group">
-            <button
+            <ActionButton
               className="line-action-button"
-              type="button"
-              onPointerDown={(event) => runToolbarAction(event, onReverseLines)}
-              onClick={(event) => runKeyboardAction(event, onReverseLines)}
+              onAction={onReverseLines}
             >
               {text.reverseLines}
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               className="line-action-button"
-              type="button"
-              onPointerDown={(event) => runToolbarAction(event, onDeduplicateLines)}
-              onClick={(event) => runKeyboardAction(event, onDeduplicateLines)}
+              onAction={onDeduplicateLines}
             >
               {text.deduplicateLines}
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               className="line-action-button"
-              type="button"
-              onPointerDown={(event) => runToolbarAction(event, onCommaValuesToLines)}
-              onClick={(event) => runKeyboardAction(event, onCommaValuesToLines)}
+              onAction={onCommaValuesToLines}
             >
               {text.commaToLines}
-            </button>
+            </ActionButton>
           </div>
         </div>
         <div className="input-actions">
-          <button
+          <ActionButton
             className="secondary-button"
-            type="button"
-            onPointerDown={(event) => runToolbarAction(event, onCopySource)}
-            onClick={(event) => runKeyboardAction(event, onCopySource)}
+            onAction={onCopySource}
           >
             {text.copy}
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             className="secondary-button"
-            type="button"
-            onPointerDown={(event) => runToolbarAction(event, onPasteSource)}
-            onClick={(event) => runKeyboardAction(event, onPasteSource)}
+            onAction={onPasteSource}
           >
             {text.paste}
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             className="secondary-button"
-            type="button"
-            onPointerDown={(event) => runToolbarAction(event, onClearSource)}
-            onClick={(event) => runKeyboardAction(event, onClearSource)}
+            onAction={onClearSource}
           >
             {text.clear}
-          </button>
+          </ActionButton>
         </div>
       </div>
       <div className="editor-stack">

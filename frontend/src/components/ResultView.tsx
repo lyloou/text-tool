@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ResultOutput } from '../services/tauriApi'
+import ActionButton from './ActionButton'
 
 type ResultViewProps = {
   ignoreEmptyLines: boolean
@@ -31,21 +32,6 @@ function ResultView({
   onCopy,
 }: ResultViewProps) {
   const [expandedFormat, setExpandedFormat] = useState<ResultOutput['format'] | null>(null)
-
-  function runButtonAction(event: React.PointerEvent<HTMLButtonElement>, action: () => void) {
-    if (event.pointerType === 'mouse' && event.button !== 0) {
-      return
-    }
-
-    event.preventDefault()
-    action()
-  }
-
-  function runKeyboardAction(event: React.MouseEvent<HTMLButtonElement>, action: () => void) {
-    if (event.detail === 0) {
-      action()
-    }
-  }
 
   function toggleExpandedFormat(format: ResultOutput['format']) {
     setExpandedFormat((current) => (current === format ? null : format))
@@ -88,24 +74,20 @@ function ResultView({
               </div>
               <div className="result-card-actions">
                 {item.output ? (
-                  <button
+                  <ActionButton
                     className="secondary-button"
-                    type="button"
                     aria-expanded={expandedFormat === item.format}
-                    onPointerDown={(event) => runButtonAction(event, () => toggleExpandedFormat(item.format))}
-                    onClick={(event) => runKeyboardAction(event, () => toggleExpandedFormat(item.format))}
+                    onAction={() => toggleExpandedFormat(item.format)}
                   >
                     {expandedFormat === item.format ? text.collapse : text.expand}
-                  </button>
+                  </ActionButton>
                 ) : null}
-                <button
+                <ActionButton
                   className="secondary-button"
-                  type="button"
-                  onPointerDown={(event) => runButtonAction(event, () => onCopy(item.output))}
-                  onClick={(event) => runKeyboardAction(event, () => onCopy(item.output))}
+                  onAction={() => onCopy(item.output)}
                 >
                   {text.copy}
-                </button>
+                </ActionButton>
               </div>
             </div>
             <div className={expandedFormat === item.format ? 'result-surface expanded' : 'result-surface'}>

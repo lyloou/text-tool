@@ -45,6 +45,7 @@ The Rust core currently exposes:
 - `src-tauri/src/main.rs`: Tauri app startup and command registration.
 - `frontend/src/App.tsx`: main frontend state and workflow orchestration.
 - `frontend/src/services/tauriApi.ts`: frontend API boundary to Tauri commands.
+- `frontend/src/components/ActionButton.tsx`: shared immediate-action button for editor-focused workflows.
 - `frontend/src/components/Toolbar.tsx`: source-side controls.
 - `frontend/src/components/InputEditor.tsx`: editable source area with highlighting.
 - `frontend/src/components/ResultView.tsx`: result-side controls and output cards.
@@ -99,3 +100,11 @@ The roadmap in `PLAN.md` lists these likely next features:
 - Add tests for behavior changes in `crates/text_core` when changing Rust core logic.
 - Keep frontend changes scoped to the relevant component or service boundary.
 - Do not remove unrelated dead code; mention it instead.
+
+### Frontend Interaction Rules
+
+- The main editor is a high-frequency focus target. Immediate action buttons around it should use `ActionButton` instead of raw `<button>` when a mouse click is expected to work without first moving focus.
+- Use `ActionButton` for editor toolbar actions, editor-adjacent toggles such as soft wrap and numeric sort, and result-panel actions such as copy, expand, and collapse.
+- `ActionButton` runs mouse actions on `pointerdown` with `preventDefault()`, ignores non-left mouse buttons, and keeps keyboard activation through `click`.
+- Do not duplicate custom `onPointerDown`/`onClick` action splitting in feature components unless `ActionButton` cannot express the required behavior.
+- Raw `<button>` is still fine for settings windows, normal form controls, and buttons that intentionally need native focus/click behavior.
